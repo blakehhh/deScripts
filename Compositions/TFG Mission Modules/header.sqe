@@ -1,0 +1,12 @@
+version=54;
+name="TFG Mission Modules";
+author="Geki";
+category="EdSubcat_SideSlot";
+requiredAddons[]=
+{
+	"acre_api",
+	"A3_Modules_F_Curator_Curator",
+	"ef_curator",
+	"A3_Modules_F_Multiplayer",
+	"A3_Ui_F"
+};

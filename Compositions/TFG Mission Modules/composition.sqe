@@ -1,0 +1,562 @@
+version=54;
+center[]={1836.3291,12.97,2531.3745};
+class items
+{
+	items=7;
+	class Item0
+	{
+		dataType="Logic";
+		class PositionInfo
+		{
+			position[]={-0.28955078,0,-4.1411133};
+		};
+		id=176;
+		type="acre_api_basicMissionSetup";
+		class CustomAttributes
+		{
+			class Attribute0
+			{
+				property="acre_api_basicMissionSetup_DefaultRadio";
+				expression="_this setVariable ['DefaultRadio',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="";
+					};
+				};
+			};
+			class Attribute1
+			{
+				property="acre_api_basicMissionSetup_BabelSetup";
+				expression="_this setVariable ['BabelSetup',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="SCALAR";
+						value=2;
+					};
+				};
+			};
+			class Attribute2
+			{
+				property="acre_api_basicMissionSetup_RadioSetup";
+				expression="_this setVariable ['RadioSetup',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="BOOL";
+						value=1;
+					};
+				};
+			};
+			class Attribute3
+			{
+				property="acre_api_basicMissionSetup_DefaultRadio_Three";
+				expression="_this setVariable ['DefaultRadio_Three',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="";
+					};
+				};
+			};
+			class Attribute4
+			{
+				property="acre_api_basicMissionSetup_DefaultRadio_Four";
+				expression="_this setVariable ['DefaultRadio_Four',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="";
+					};
+				};
+			};
+			class Attribute5
+			{
+				property="acre_api_basicMissionSetup_DefaultRadio_Two";
+				expression="_this setVariable ['DefaultRadio_Two',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="";
+					};
+				};
+			};
+			nAttributes=6;
+		};
+	};
+	class Item1
+	{
+		dataType="Logic";
+		class PositionInfo
+		{
+			position[]={1.7963867,0,3.4316406};
+			angles[]={-0,0.25466889,0};
+		};
+		id=171;
+		type="ModuleCurator_F";
+		class CustomAttributes
+		{
+			class Attribute0
+			{
+				property="ModuleCurator_F_Owner";
+				expression="_this setVariable ['Owner',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="z1";
+					};
+				};
+			};
+			class Attribute1
+			{
+				property="ModuleCurator_F_Forced";
+				expression="_this setVariable ['Forced',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="SCALAR";
+						value=0;
+					};
+				};
+			};
+			class Attribute2
+			{
+				property="ModuleCurator_F_Name";
+				expression="_this setVariable ['Name',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="";
+					};
+				};
+			};
+			class Attribute3
+			{
+				property="ModuleCurator_F_Addons";
+				expression="_this setVariable ['Addons',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="SCALAR";
+						value=3;
+					};
+				};
+			};
+			nAttributes=4;
+		};
+	};
+	class Item2
+	{
+		dataType="Logic";
+		class PositionInfo
+		{
+			position[]={1.9672852,0,-0.046630859};
+			angles[]={-0,0.25466889,0};
+		};
+		id=172;
+		type="ModuleCurator_F";
+		class CustomAttributes
+		{
+			class Attribute0
+			{
+				property="ModuleCurator_F_Owner";
+				expression="_this setVariable ['Owner',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="z2";
+					};
+				};
+			};
+			class Attribute1
+			{
+				property="ModuleCurator_F_Forced";
+				expression="_this setVariable ['Forced',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="SCALAR";
+						value=0;
+					};
+				};
+			};
+			class Attribute2
+			{
+				property="ModuleCurator_F_Name";
+				expression="_this setVariable ['Name',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="";
+					};
+				};
+			};
+			class Attribute3
+			{
+				property="ModuleCurator_F_Addons";
+				expression="_this setVariable ['Addons',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="SCALAR";
+						value=3;
+					};
+				};
+			};
+			nAttributes=4;
+		};
+	};
+	class Item3
+	{
+		dataType="Logic";
+		class PositionInfo
+		{
+			position[]={4.0258789,0,1.7768555};
+			angles[]={-0,0.25466889,0};
+		};
+		id=173;
+		type="ModuleCurator_F";
+		class CustomAttributes
+		{
+			class Attribute0
+			{
+				property="ModuleCurator_F_Owner";
+				expression="_this setVariable ['Owner',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="#adminLogged";
+					};
+				};
+			};
+			class Attribute1
+			{
+				property="ModuleCurator_F_Forced";
+				expression="_this setVariable ['Forced',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="SCALAR";
+						value=0;
+					};
+				};
+			};
+			class Attribute2
+			{
+				property="ModuleCurator_F_Name";
+				expression="_this setVariable ['Name',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="";
+					};
+				};
+			};
+			class Attribute3
+			{
+				property="ModuleCurator_F_Addons";
+				expression="_this setVariable ['Addons',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="SCALAR";
+						value=3;
+					};
+				};
+			};
+			nAttributes=4;
+		};
+	};
+	class Item4
+	{
+		dataType="Logic";
+		class PositionInfo
+		{
+			position[]={-2.5688477,0,-3.217041};
+		};
+		id=177;
+		type="acre_api_nameChannels";
+		class CustomAttributes
+		{
+			class Attribute0
+			{
+				property="acre_api_nameChannels_Channel_1";
+				expression="_this setVariable ['Channel_1',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="OPEN";
+					};
+				};
+			};
+			class Attribute1
+			{
+				property="acre_api_nameChannels_Channel_2";
+				expression="_this setVariable ['Channel_2',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="A11";
+					};
+				};
+			};
+			class Attribute2
+			{
+				property="acre_api_nameChannels_Channel_3";
+				expression="_this setVariable ['Channel_3',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="A12";
+					};
+				};
+			};
+			class Attribute3
+			{
+				property="acre_api_nameChannels_Channel_4";
+				expression="_this setVariable ['Channel_4',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="A13";
+					};
+				};
+			};
+			class Attribute4
+			{
+				property="acre_api_nameChannels_Channel_5";
+				expression="_this setVariable ['Channel_5',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="A14";
+					};
+				};
+			};
+			class Attribute5
+			{
+				property="acre_api_nameChannels_SideSelect";
+				expression="_this setVariable ['SideSelect',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="SCALAR";
+						value=2;
+					};
+				};
+			};
+			class Attribute6
+			{
+				property="acre_api_nameChannels_Channel_6";
+				expression="_this setVariable ['Channel_6',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="Troop Net";
+					};
+				};
+			};
+			class Attribute7
+			{
+				property="acre_api_nameChannels_Channel_7";
+				expression="_this setVariable ['Channel_7',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="TF Net";
+					};
+				};
+			};
+			class Attribute8
+			{
+				property="acre_api_nameChannels_Channel_8";
+				expression="_this setVariable ['Channel_8',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="ESQN Net";
+					};
+				};
+			};
+			class Attribute9
+			{
+				property="acre_api_nameChannels_Channel_9";
+				expression="_this setVariable ['Channel_9',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="ALT Net";
+					};
+				};
+			};
+			class Attribute10
+			{
+				property="acre_api_nameChannels_Channel_10";
+				expression="_this setVariable ['Channel_10',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="CONTINGENCY Net";
+					};
+				};
+			};
+			nAttributes=11;
+		};
+	};
+	class Item5
+	{
+		dataType="Logic";
+		class PositionInfo
+		{
+			position[]={-1.0339355,0,1.184082};
+			angles[]={-0,4.3343496,0};
+		};
+		id=174;
+		type="ModuleRespawnPosition_F";
+		class CustomAttributes
+		{
+			class Attribute0
+			{
+				property="ModuleRespawnPosition_F_Marker";
+				expression="_this setVariable ['Marker',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="0";
+					};
+				};
+			};
+			class Attribute1
+			{
+				property="ModuleRespawnPosition_F_Name";
+				expression="_this setVariable ['Name',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="Main Base";
+					};
+				};
+			};
+			class Attribute2
+			{
+				property="ModuleRespawnPosition_F_Side";
+				expression="_this setVariable ['Side',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="1";
+					};
+				};
+			};
+			class Attribute3
+			{
+				property="ModuleRespawnPosition_F_ShowNotification";
+				expression="_this setVariable ['ShowNotification',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="1";
+					};
+				};
+			};
+			class Attribute4
+			{
+				property="ModuleRespawnPosition_F_Type";
+				expression="_this setVariable ['Type',_value,true];";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="0";
+					};
+				};
+			};
+			nAttributes=5;
+		};
+	};
+	class Item6
+	{
+		dataType="Marker";
+		position[]={-3.8972168,0,1.0114746};
+		name="respawn_west_1";
+		type="Empty";
+		angle=326.48462;
+		id=175;
+		class CustomAttributes
+		{
+			class Attribute0
+			{
+				property="ENH_markerShape";
+				expression="if (_value != 'NONE' && isServer) then {_this setMarkerShape _value}";
+				class Value
+				{
+					class data
+					{
+						singleType="STRING";
+						value="NONE";
+					};
+				};
+			};
+			nAttributes=1;
+		};
+	};
+};
