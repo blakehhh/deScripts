@@ -66,7 +66,7 @@ def main():
 
     error_count = 0
     addon_base_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    if (args.module): addon_base_path = os.path.join(addon_base_path, "cScripts", args.module)
+    if (args.module): addon_base_path = os.path.join(addon_base_path, "cScripts_version", "cScripts", args.module)
     arma_files = get_files_to_process(addon_base_path)
     print(f"Checking {len(arma_files)} files from {addon_base_path}")
     with concurrent.futures.ThreadPoolExecutor(max_workers=12) as executor:

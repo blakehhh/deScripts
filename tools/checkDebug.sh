@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SCRIPTPATH=`dirname $(readlink -f $0)`
-cd $SCRIPTPATH/../cScripts
+cd $SCRIPTPATH/../cScripts_version/cScripts
 
 
 [[ ! $(grep -n "//#define DEBUG_MODE" script_component.hpp | wc -l) == 1 ]] && echo "ERROR: Global debugging enabled" && exit 1

@@ -156,9 +156,9 @@ def main():
     parser.add_argument('-m','--module', help='only search specified module addon folder', required=False, default="")
     args = parser.parse_args()
 
-    for folder in ['cScripts']:
+    for folder in ['cScripts_version']:
         # Allow running from root directory as well as from inside the tools directory
-        rootDir = "../cScripts" + folder
+        rootDir = "../" + folder
         if (os.path.exists(folder)):
             rootDir = folder
 

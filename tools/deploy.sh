@@ -6,10 +6,10 @@ VERSION_TAG=$*
 
 mkdir -p release/
 
-sed -i "s/#define VERSION.*/#define VERSION \"${VERSION_TAG}\"/" cScripts/script_component.hpp
+sed -i "s/#define VERSION.*/#define VERSION \"${VERSION_TAG}\"/" cScripts_version/cScripts/script_component.hpp
 sed -i "s/DevBuild/${VERSION_TAG}/" tools/config.json
 
-cp cba_settings.sqf release/cba_settings.sqf
+cp cScripts_version/cba_settings.sqf release/cba_settings.sqf
 
 python3 tools/build.py --deploy
 

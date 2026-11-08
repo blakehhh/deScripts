@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 
 import fnmatch
 import os
@@ -114,7 +114,7 @@ def main():
     parser.add_argument('-m','--module', help='only search specified module addon folder', required=False, default=".")
     args = parser.parse_args()
 
-    for root, dirnames, filenames in os.walk('../cScripts' + '/' + args.module):
+    for root, dirnames, filenames in os.walk('../cScripts_version/cScripts' + '/' + args.module):
       for filename in fnmatch.filter(filenames, '*.sqf'):
         sqf_list.append(os.path.join(root, filename))
 

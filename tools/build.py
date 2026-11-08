@@ -245,7 +245,10 @@ def main():
     # Collect directoies and files
     file_collection = []
     dir_collection  = []
-    for obj in glob.glob(os.path.join(ProjectRoot, '*')):
+    source_dir = os.path.join(ProjectRoot, 'cScripts_version')
+    if not os.path.exists(source_dir):
+        source_dir = ProjectRoot
+    for obj in glob.glob(os.path.join(source_dir, '*')):
         objName = os.path.basename(obj)
         if objName in config_notlist:
             continue
@@ -253,6 +256,11 @@ def main():
             dir_collection.append(obj)
         if os.path.isfile(obj):
             file_collection.append(obj)
+    if source_dir != ProjectRoot:
+        for extra in ['LICENSE', 'README.md']:
+            extra_path = os.path.join(ProjectRoot, extra)
+            if os.path.isfile(extra_path) and extra not in config_notlist:
+                file_collection.append(extra_path)
     
     print("  Name:    {}".format(config_name))
     print("  Version: {}".format(config_version))

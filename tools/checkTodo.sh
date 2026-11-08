@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SCRIPTPATH=`dirname $(readlink -f $0)`
-cd $SCRIPTPATH/../cScripts
+cd $SCRIPTPATH/../cScripts_version/cScripts
 
 grep -rn "TODO"
 [[ ! $(grep -rn "TODO" | wc -l) == 0 ]] && echo "WARNING: TODO found" && exit 0

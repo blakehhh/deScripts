@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SCRIPTPATH=`dirname $(readlink -f $0)`
-cd $SCRIPTPATH/../cScripts
+cd $SCRIPTPATH/../cScripts_version/cScripts
 
 grep -rn "LOG(" --exclude=script_macros.hpp
 grep -rn "LOG_" --exclude=script_macros.hpp

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SCRIPTPATH=`dirname $(readlink -f $0)`
-cd $SCRIPTPATH/../cScripts
+cd $SCRIPTPATH/../cScripts_version/cScripts
 
 grep -rn "FIXME"
 [[ ! $(grep -rn "FIXME" | wc -l) == 0 ]] && echo "ERROR: FIXME found" && exit 1

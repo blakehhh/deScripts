@@ -16,7 +16,7 @@ def strip_path_from_filename(pathfile=''):
     return filename
 
 def get_loadout_files():
-    loadoutFiles = os.listdir(os.path.join(rootDir, 'cScripts', 'Loadouts'))
+    loadoutFiles = os.listdir(os.path.join(rootDir, 'cScripts_version', 'cScripts', 'Loadouts'))
     return loadoutFiles
 
 def main():
@@ -26,7 +26,7 @@ def main():
         configFile = file.replace('.hpp', '')
         data[configFile] = []
         if ".hpp" in file:
-            cfgFile = open(os.path.join(rootDir, 'cScripts', 'Loadouts', file), 'r')
+            cfgFile = open(os.path.join(rootDir, 'cScripts_version', 'cScripts', 'Loadouts', file), 'r')
             CfgLoadout = cfgFile.read()
             classnames = re.findall('%s(.*)%s' % ('class', ':'), CfgLoadout)
             for classname in classnames:
