@@ -7520,7 +7520,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this, ""TFG Default"", true, true, true, true, true] call cScripts_fnc_doStarterCrate;";
+			init="[this, ""TFG Default"", true, true, true, true, true] call deScripts_fnc_doStarterCrate;";
 		};
 		id=63;
 		type="B_supplyCrate_F";
@@ -7554,7 +7554,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this, ""TFG Default"", true, true, true, true, true] call cScripts_fnc_doStarterCrate;";
+			init="[this, ""TFG Default"", true, true, true, true, true] call deScripts_fnc_doStarterCrate;";
 		};
 		id=64;
 		type="B_supplyCrate_F";
@@ -7588,7 +7588,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this, ""TFG Default"", true, true, true, true, true] call cScripts_fnc_doStarterCrate;";
+			init="[this, ""TFG Default"", true, true, true, true, true] call deScripts_fnc_doStarterCrate;";
 		};
 		id=65;
 		type="B_supplyCrate_F";
@@ -7622,7 +7622,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this, ""TFG Default"", true, true, true, true, true] call cScripts_fnc_doStarterCrate;";
+			init="[this, ""TFG Default"", true, true, true, true, true] call deScripts_fnc_doStarterCrate;";
 		};
 		id=66;
 		type="B_supplyCrate_F";
@@ -7656,7 +7656,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this, ""TFG Default"", true, true, true, true, true] call cScripts_fnc_doStarterCrate;";
+			init="[this, ""TFG Default"", true, true, true, true, true] call deScripts_fnc_doStarterCrate;";
 		};
 		id=67;
 		type="B_supplyCrate_F";

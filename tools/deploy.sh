@@ -6,10 +6,10 @@ VERSION_TAG=$*
 
 mkdir -p release/
 
-sed -i "s/#define VERSION.*/#define VERSION \"${VERSION_TAG}\"/" cScripts_version/cScripts/script_component.hpp
+sed -i "s/#define VERSION.*/#define VERSION \"${VERSION_TAG}\"/" deScripts_version/deScripts/script_component.hpp
 sed -i "s/DevBuild/${VERSION_TAG}/" tools/config.json
 
-cp cScripts_version/cba_settings.sqf release/cba_settings.sqf
+cp deScripts_version/cba_settings.sqf release/cba_settings.sqf
 
 python3 tools/build.py --deploy
 
@@ -26,7 +26,7 @@ sed -i "s/DEVBUILD/v${VERSION_TAG}/g" Compositions/*/header.sqe
 #echo "Creating patch build for ${PREV_TAG} to ${VERSION_TAG}"
 #git diff --name-only ${PREV_TAG} ${VERSION_TAG} > pre_changed_file_list.txt
 #sed '/tools/d;/Compositions/d;/resourses/d;/^\.\(.*\)/d' pre_changed_file_list.txt > changed_file_list.txt
-#zip release/cScripts_PATCH_v${PREV_TAG}_to_v${VERSION_TAG}.zip -@ < changed_file_list.txt
+#zip release/deScripts_PATCH_v${PREV_TAG}_to_v${VERSION_TAG}.zip -@ < changed_file_list.txt
 #set -e
 
 # Pack Compositions

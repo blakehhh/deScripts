@@ -15,5 +15,5 @@ jobs:
       - name: Upload releases
         uses: actions/upload-artifact@v3
         with:
-          name: cScripts_DevBuilds
+          name: deScripts_DevBuilds
           path: release/*

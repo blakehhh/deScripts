@@ -114,7 +114,7 @@ def main():
     parser.add_argument('-m','--module', help='only search specified module addon folder', required=False, default=".")
     args = parser.parse_args()
 
-    for root, dirnames, filenames in os.walk('../cScripts_version/cScripts' + '/' + args.module):
+    for root, dirnames, filenames in os.walk('../deScripts_version/deScripts' + '/' + args.module):
       for filename in fnmatch.filter(filenames, '*.sqf'):
         sqf_list.append(os.path.join(root, filename))
 

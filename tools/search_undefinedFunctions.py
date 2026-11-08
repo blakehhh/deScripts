@@ -58,7 +58,7 @@ def Paste( data ):
 
 
 def getFunctions(filepath):
-    selfmodule = (re.search(r'cScripts[\W]*([_a-zA-Z0-9]*)', filepath)).group(1)
+    selfmodule = (re.search(r'deScripts[\W]*([_a-zA-Z0-9]*)', filepath)).group(1)
     # print("Checking {0} from {1}".format(filepath,selfmodule))
 
     with open(filepath, 'r') as file:
@@ -74,16 +74,16 @@ def getFunctions(filepath):
 
     fileFuncs = []
     for func in modfuncs:
-        fileFuncs.append("cScripts_{0}_fnc_{1}".format(selfmodule,func))
+        fileFuncs.append("deScripts_{0}_fnc_{1}".format(selfmodule,func))
 
     for exModule,func in exfuncs:
-        fileFuncs.append("cScripts_{0}_fnc_{1}".format(exModule, func))
+        fileFuncs.append("deScripts_{0}_fnc_{1}".format(exModule, func))
 
     return fileFuncs
 
 
 def getStrings(filepath):
-    selfmodule = (re.search(r'cScripts[\W]*([_a-zA-Z0-9]*)', filepath)).group(1)
+    selfmodule = (re.search(r'deScripts[\W]*([_a-zA-Z0-9]*)', filepath)).group(1)
     # print("Checking {0} from {1}".format(filepath,selfmodule))
 
     with open(filepath, 'r') as file:
@@ -99,10 +99,10 @@ def getStrings(filepath):
 
     fileStrings = []
     for localString in modStrings:
-        fileStrings.append("STR_CSCRIPTS_{0}_{1}".format(selfmodule, localString))
+        fileStrings.append("STR_DESCRIPTS_{0}_{1}".format(selfmodule, localString))
 
     for (exModule, exString) in exStrings:
-        fileStrings.append("STR_CSCRIPTS_{0}_{1}".format(exModule, exString))
+        fileStrings.append("STR_DESCRIPTS_{0}_{1}".format(exModule, exString))
 
     return fileStrings
 
@@ -121,7 +121,7 @@ def main():
     parser.add_argument('-m','--module', help='only search specified module addon folder', required=False, default=".")
     args = parser.parse_args()
 
-    for root, dirnames, filenames in os.walk('../cScripts_version/cScripts' + '/' + args.module):
+    for root, dirnames, filenames in os.walk('../deScripts_version/deScripts' + '/' + args.module):
       for filename in fnmatch.filter(filenames, '*.sqf'):
         sqf_list.append(os.path.join(root, filename))
       for filename in fnmatch.filter(filenames, '*.cpp'):

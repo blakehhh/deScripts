@@ -26,7 +26,7 @@ jobs:
       - name: Lint (sqflint)
         uses: arma-actions/sqflint@master
         with:
-          args: --exit e --directory cScripts_version/cScripts/functions
+          args: --exit e --directory deScripts_version/deScripts/functions
         continue-on-error: true # No failure due to many false-positives
 
   quality:

@@ -17,7 +17,7 @@ def strip_path_from_filename(pathfile=''):
 
 def main():
     data = {}
-    loadoutConfigs = glob.glob(rootDir + '/cScripts_version/cScripts/Loadouts/*.hpp')
+    loadoutConfigs = glob.glob(rootDir + '/deScripts_version/deScripts/Loadouts/*.hpp')
 
     for loadout in loadoutConfigs:
         cfgFile = open(loadout)

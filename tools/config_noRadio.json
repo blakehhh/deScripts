@@ -1,11 +1,11 @@
 {
     "build" : {
-        "scriptName": "cScripts NoRadio"
+        "scriptName": "deScripts NoRadio"
     },
     "cba_settings.sqf" : {
         "add": [
-            "\n// cScripts Mission Settings",
-            "force force cScripts_Settings_enableRadios = false;"
+            "\n// deScripts Mission Settings",
+            "force force deScripts_Settings_enableRadios = false;"
         ]
     }
 }

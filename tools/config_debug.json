@@ -1,8 +1,8 @@
 {
     "build" : {
-        "scriptName": "cScripts Debug"
+        "scriptName": "deScripts Debug"
     },
-    "cScripts/script_component.hpp" : {
+    "deScripts/script_component.hpp" : {
         "//#define DEBUG_MODE" : "#define DEBUG_MODE"
     }
 }

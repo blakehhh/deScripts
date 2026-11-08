@@ -7339,7 +7339,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this, ""manual""] call cScripts_fnc_doStarterCrate;";
+			init="[this, ""manual""] call deScripts_fnc_doStarterCrate;";
 		};
 		id=61;
 		type="B_supplyCrate_F";
@@ -9678,7 +9678,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=88;
@@ -9713,7 +9713,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=89;
@@ -9748,7 +9748,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=90;
@@ -9783,7 +9783,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=91;
@@ -9818,7 +9818,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=94;
@@ -9853,7 +9853,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=95;
@@ -9888,7 +9888,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=96;
@@ -9923,7 +9923,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=97;
@@ -9958,7 +9958,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=98;
@@ -9993,7 +9993,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=99;
@@ -10028,7 +10028,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=102;
@@ -10063,7 +10063,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=103;
@@ -10098,7 +10098,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=104;
@@ -10133,7 +10133,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=105;
@@ -10168,7 +10168,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=106;
@@ -10203,7 +10203,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=107;
@@ -10238,7 +10238,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=108;
@@ -10273,7 +10273,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=109;
@@ -10308,7 +10308,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=110;
@@ -10343,7 +10343,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=111;
@@ -10378,7 +10378,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=112;
@@ -10413,7 +10413,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=113;
@@ -10448,7 +10448,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=114;
@@ -10483,7 +10483,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=115;
@@ -10518,7 +10518,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=116;
@@ -10553,7 +10553,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=117;
@@ -10588,7 +10588,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=118;
@@ -10623,7 +10623,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=119;
@@ -10658,7 +10658,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=120;
@@ -10693,7 +10693,7 @@ class items
 		flags=4;
 		class Attributes
 		{
-			init="[this] call cScripts_fnc_addLoadoutLocker;";
+			init="[this] call deScripts_fnc_addLoadoutLocker;";
 			disableSimulation=1;
 		};
 		id=121;

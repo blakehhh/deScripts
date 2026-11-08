@@ -1,23 +1,23 @@
 {
     "build" : {
-        "scriptName": "cScripts NoLoadouts"
+        "scriptName": "deScripts NoLoadouts"
     },
-    "cScripts/CfgLoadouts.hpp" : {
+    "deScripts/CfgLoadouts.hpp" : {
         "rem": [""],
         "add": [
             "class CfgLoadouts {",
             "};"
         ]
     },
-    "cScripts/Loadouts/CfgLoadouts_Alpha_FixedWing.hpp" : "REMOVE",
-    "cScripts/Loadouts/CfgLoadouts_Alpha_Rotary.hpp" : "REMOVE",
-    "cScripts/Loadouts/CfgLoadouts_Alpha.hpp" : "REMOVE",
-    "cScripts/Loadouts/CfgLoadouts_Bravo_Atlas.hpp" : "REMOVE",
-    "cScripts/Loadouts/CfgLoadouts_Bravo_Crew.hpp" : "REMOVE",
-    "cScripts/Loadouts/CfgLoadouts_Bravo_Leadership.hpp" : "REMOVE",
-    "cScripts/Loadouts/CfgLoadouts_Bravo_Viking.hpp" : "REMOVE",
-    "cScripts/Loadouts/CfgLoadouts_Charlie_Squad.hpp" : "REMOVE",
-    "cScripts/Loadouts/CfgLoadouts_Charlie_Weapon.hpp" : "REMOVE",
-    "cScripts/Loadouts/CfgLoadouts_Common.hpp" : "REMOVE",
-    "cScripts/Loadouts/CfgLoadouts_UserCustom.hpp" : "REMOVE"
+    "deScripts/Loadouts/CfgLoadouts_Alpha_FixedWing.hpp" : "REMOVE",
+    "deScripts/Loadouts/CfgLoadouts_Alpha_Rotary.hpp" : "REMOVE",
+    "deScripts/Loadouts/CfgLoadouts_Alpha.hpp" : "REMOVE",
+    "deScripts/Loadouts/CfgLoadouts_Bravo_Atlas.hpp" : "REMOVE",
+    "deScripts/Loadouts/CfgLoadouts_Bravo_Crew.hpp" : "REMOVE",
+    "deScripts/Loadouts/CfgLoadouts_Bravo_Leadership.hpp" : "REMOVE",
+    "deScripts/Loadouts/CfgLoadouts_Bravo_Viking.hpp" : "REMOVE",
+    "deScripts/Loadouts/CfgLoadouts_Charlie_Squad.hpp" : "REMOVE",
+    "deScripts/Loadouts/CfgLoadouts_Charlie_Weapon.hpp" : "REMOVE",
+    "deScripts/Loadouts/CfgLoadouts_Common.hpp" : "REMOVE",
+    "deScripts/Loadouts/CfgLoadouts_UserCustom.hpp" : "REMOVE"
 }

@@ -245,7 +245,7 @@ def main():
     # Collect directoies and files
     file_collection = []
     dir_collection  = []
-    source_dir = os.path.join(ProjectRoot, 'cScripts_version')
+    source_dir = os.path.join(ProjectRoot, 'deScripts_version')
     if not os.path.exists(source_dir):
         source_dir = ProjectRoot
     for obj in glob.glob(os.path.join(source_dir, '*')):

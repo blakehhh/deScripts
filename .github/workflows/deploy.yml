@@ -14,13 +14,13 @@ jobs:
       - name: Build releases
         run: ./tools/deploy.sh ${{github.ref_name}}
 
-      - name: Upload release (cScripts)
+      - name: Upload release (deScripts)
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref }}
-          asset_name: cScripts-${{github.ref_name}}.zip
-          file: release/cScripts-${{github.ref_name}}.zip
+          asset_name: deScripts-${{github.ref_name}}.zip
+          file: release/deScripts-${{github.ref_name}}.zip
 
       - name: Upload release (Compositions)
         uses: svenstaro/upload-release-action@v2
@@ -30,29 +30,29 @@ jobs:
           asset_name: Compositions-${{github.ref_name}}.zip
           file: release/Compositions-${{github.ref_name}}.zip
 
-      - name: Upload release (cScripts_Debug)
+      - name: Upload release (deScripts_Debug)
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref }}
-          asset_name: cScripts_Debug-${{github.ref_name}}.zip
-          file: release/cScripts_Debug-${{github.ref_name}}.zip
+          asset_name: deScripts_Debug-${{github.ref_name}}.zip
+          file: release/deScripts_Debug-${{github.ref_name}}.zip
 
-      - name: Upload release (cScripts_NoRadio)
+      - name: Upload release (deScripts_NoRadio)
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref }}
-          asset_name: cScripts_NoRadio-${{github.ref_name}}.zip
-          file: release/cScripts_NoRadio-${{github.ref_name}}.zip
+          asset_name: deScripts_NoRadio-${{github.ref_name}}.zip
+          file: release/deScripts_NoRadio-${{github.ref_name}}.zip
 
-      - name: Upload release (cScripts_NoLoadouts)
+      - name: Upload release (deScripts_NoLoadouts)
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref }}
-          asset_name: cScripts_NoLoadouts-${{github.ref_name}}.zip
-          file: release/cScripts_NoLoadouts-${{github.ref_name}}.zip
+          asset_name: deScripts_NoLoadouts-${{github.ref_name}}.zip
+          file: release/deScripts_NoLoadouts-${{github.ref_name}}.zip
 
       - name: Upload CBA_Settings.sqf
         uses: svenstaro/upload-release-action@v2
