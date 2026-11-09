@@ -8,21 +8,26 @@
 1. [Architectural Overview & Lifecycle](#1-architectural-overview--lifecycle)
    - [Boot & Execution Timeline](#boot--execution-timeline)
    - [Subsystem Relationships](#subsystem-relationships)
-2. [Root Files & Engine Entry Points](#2-root-files--engine-entry-points)
-3. [deScripts Core Headers & Life-Cycle Scripts](#3-cscripts-core-headers--life-cycle-scripts)
-4. [Initialization Subsystem (`deScripts/functions/init/`)](#4-initialization-subsystem-cscriptsfunctionsinit)
-5. [Gear & Loadout Subsystem](#5-gear--loadout-subsystem)
+2. [Quick Start: Mission Maker Functions (3DEN Init)](#2-quick-start-mission-maker-functions-3den-init)
+   - [Airborne & Parachute Operations](#1-airborne--parachute-operations)
+   - [Staging Logistics, Crates & Lockers](#2-staging-logistics-crates--lockers)
+   - [Aviation & Vehicle Helpers](#3-aviation--vehicle-helpers)
+   - [Base Optimization & Training Ranges](#4-base-optimization--training-ranges)
+3. [Root Files & Engine Entry Points](#3-root-files--engine-entry-points)
+4. [deScripts Core Headers & Life-Cycle Scripts](#4-cscripts-core-headers--life-cycle-scripts)
+5. [Initialization Subsystem (`deScripts/functions/init/`)](#5-initialization-subsystem-cscriptsfunctionsinit)
+6. [Gear & Loadout Subsystem](#6-gear--loadout-subsystem)
    - [Loadout Resolution Cascade](#loadout-resolution-cascade)
    - [Configuration Files (`deScripts/Loadouts/`)](#configuration-files-cscriptsloadouts)
    - [Gear Functions (`deScripts/functions/gear/`)](#gear-functions-cscriptsfunctionsgear)
-6. [Logistics & Cargo Subsystem (`deScripts/functions/logistics/`)](#6-logistics--cargo-subsystem-cscriptsfunctionslogistics)
-7. [Mission Helpers (`deScripts/functions/mission/`)](#7-mission-helpers-cscriptsfunctionsmission)
-8. [Systems Engine (`deScripts/functions/systems/`)](#8-systems-engine-cscriptsfunctionssystems)
-9. [ZEN Zeus Modules (`deScripts/functions/modules/`)](#9-zen-zeus-modules-cscriptsfunctionsmodules)
-10. [Documents & Briefing Checklists (`deScripts/functions/documents/`)](#10-documents--briefing-checklists-cscriptsfunctionsdocuments)
-11. [Diagnostics & Automated Testing (`diag/` & `testing/`)](#11-diagnostics--automated-testing-diag--testing)
-12. [Data Assets Summary (`Data/` & `deScripts/Data/`)](#12-data-assets-summary-data--cscriptsdata)
-13. [Common Maintenance Tasks ("Where do I change X?")](#13-common-maintenance-tasks-where-do-i-change-x)
+7. [Logistics & Cargo Subsystem (`deScripts/functions/logistics/`)](#7-logistics--cargo-subsystem-cscriptsfunctionslogistics)
+8. [Mission Helpers (`deScripts/functions/mission/`)](#8-mission-helpers-cscriptsfunctionsmission)
+9. [Systems Engine (`deScripts/functions/systems/`)](#9-systems-engine-cscriptsfunctionssystems)
+10. [ZEN Zeus Modules (`deScripts/functions/modules/`)](#10-zen-zeus-modules-cscriptsfunctionsmodules)
+11. [Documents & Briefing Checklists (`deScripts/functions/documents/`)](#11-documents--briefing-checklists-cscriptsfunctionsdocuments)
+12. [Diagnostics & Automated Testing (`diag/` & `testing/`)](#12-diagnostics--automated-testing-diag--testing)
+13. [Data Assets Summary (`Data/` & `deScripts/Data/`)](#13-data-assets-summary-data--cscriptsdata)
+14. [Common Maintenance Tasks ("Where do I change X?")](#14-common-maintenance-tasks-where-do-i-change-x)
 
 ---
 
@@ -122,7 +127,180 @@ deScripts is structured around **CBA Extended Event Handlers (XEH)**, **ACE3 int
 
 ---
 
-## 2. Root Files & Engine Entry Points
+## 2. Quick Start: Mission Maker Functions (3DEN Init)
+
+These functions are designed for mission makers to paste directly into an object or vehicle's **Init** field in the 3DEN Editor.
+
+> **Namespace Note:** Both legacy `cScripts_fnc_*` and modern `deScripts_fnc_*` prefixes are fully supported. Core compositions and staging crates remain 100% backwards compatible.
+
+---
+
+### 1. Airborne & Parachute Operations
+
+#### **HALO Jump** (`deScripts_fnc_addHaloJump`)
+Attaches a high-altitude HALO freefall jump hold action to transport aircraft (C-130J, V-44X Blackfish, CH-47 Chinook, etc.). Checks altitude and validates open ramp/doors before displaying the jump action. Automatically front-mounts the player's backpack and restores it upon landing.
+
+```sqf
+// Default: Requires >= 5000m altitude, ramp/doors open, equips steerable "B_Parachute"
+[this] call deScripts_fnc_addHaloJump;
+
+// Custom altitude (e.g. 4000m):
+[this, 4000] call deScripts_fnc_addHaloJump;
+
+// Full syntax: [_vehicle, _minAltitude (default 5000), _chuteBackpackClass (default "B_Parachute"), _allowStaggered (default false)]
+[this, 4500, "B_Parachute", true] call deScripts_fnc_addHaloJump;
+```
+
+#### **Static Line Jump** (`deScripts_fnc_addLineJump`)
+Attaches a static line mass-drop hold action to transport aircraft. Validates drop altitude window, safe airspeed, and ramp/door status before ejecting paratroopers directly into canopy.
+
+```sqf
+// Default: Alt 180m–350m, Speed <= 310 km/h, equips "NonSteerable_Parachute_F"
+[this] call deScripts_fnc_addLineJump;
+
+// Custom drop corridor (e.g. 150m min altitude):
+[this, 150] call deScripts_fnc_addLineJump;
+
+// Full syntax: [_vehicle, _minAlt (default 180), _maxAlt (default 350), _maxSpeed (default 310), _chuteVehicleClass, _allowStaggered]
+[this, 150, 400, 280, "NonSteerable_Parachute_F", true] call deScripts_fnc_addLineJump;
+```
+
+---
+
+### 2. Staging Logistics, Crates & Lockers
+
+#### **Starter Crate** (`cScripts_fnc_doStarterCrate` / `deScripts_fnc_doStarterCrate`)
+Transforms any crate or container into a Task Force Grey staging supply point. Configures ACE loadout selection, Re-Gear, Heal, Insignia selection, field meals, role qualifications, and automatic ground debris cleanup.
+
+```sqf
+// Standard Starter Crate (Empty inventory, ReGear, Heal, Insignia, Role-filtered loadouts)
+[this] call cScripts_fnc_doStarterCrate;
+
+// Pre-fill with default Task Force Grey logistics supplies:
+[this, "tfg default"] call cScripts_fnc_doStarterCrate;
+
+// Show ALL company loadouts (unrestricted role selection):
+[this, "none", true, true, true, true] call cScripts_fnc_doStarterCrate;
+
+// Enable direct sanitized ACE Arsenal on the crate:
+[this, "none", true, true, true, false, true] call cScripts_fnc_doStarterCrate;
+
+// Minimal crate (Re-Gear and Heal only, no loadout switching):
+[this, "manual", true, true, false] call cScripts_fnc_doStarterCrate;
+```
+
+**Parameters Reference:**
+```sqf
+/*
+ * Arguments:
+ * 0: Object              <OBJECT>
+ * 1: Supplies Type       <STRING>  "none", "tfg default", "full", "all", "manual" (Default: "none")
+ * 2: ReGear Action       <BOOL>    (Default: true)
+ * 3: Heal Action         <BOOL>    (Default: true)
+ * 4: Insignia Selection  <BOOL>    (Default: true)
+ * 5: Show All Loadouts   <BOOL>    (Default: false - respects player permissions)
+ * 6: Direct ACE Arsenal  <BOOL>    (Default: false - adds sanitized arsenal)
+ * 7: Staging Area        <BOOL>    (Default: true)
+ */
+```
+
+#### **Personal Loadout Locker** (`cScripts_fnc_addLoadoutLocker` / `deScripts_fnc_addLoadoutLocker`)
+Turns a locker prop, footlocker, or crate into a claimed personal storage station. Allows individual players to claim the locker, lock out other players, save custom ACE kits, and re-equip their saved gear across sessions.
+
+```sqf
+// Standard Personal Locker:
+[this] call cScripts_fnc_addLoadoutLocker;
+
+// Locker with custom height offset (useful for stacked lockers or lockers placed on furniture):
+[this, 0.5] call cScripts_fnc_addLoadoutLocker;
+
+// Full syntax: [_object, _heightOffset (number or [x,y,z]), _markerHeight (default 0.75)]
+[this, [0, 0, 0.2], 0.85] call cScripts_fnc_addLoadoutLocker;
+```
+
+#### **Filtered Staging Arsenal** (`cScripts_fnc_addArsenal` / `deScripts_fnc_addArsenal`)
+Adds an on-demand, role-filtered ACE Staging Arsenal interaction to an object:
+```sqf
+[this] call cScripts_fnc_addArsenal;
+```
+
+#### **Medical Field Hospital** (`deScripts_fnc_doFieldHospital`)
+Designates an object or medical tent as an official ACE Medical Facility (`ace_medical_isMedicalFacility = true`) and stocks it with comprehensive Atlas medical supplies:
+```sqf
+[this] call deScripts_fnc_doFieldHospital;
+```
+
+#### **Standalone Re-Gear & Heal** (`cScripts_fnc_addReGear` & `cScripts_fnc_addHeal`)
+Adds dedicated single-purpose ACE interactions to objects:
+```sqf
+[this] call cScripts_fnc_addReGear; // Resets unit ammo, explosives, and role gear
+[this] call cScripts_fnc_addHeal;   // Full ACE medical heal
+```
+
+#### **Direct Loadout Action** (`deScripts_fnc_addLoadoutAction`)
+Adds a simple scroll-wheel action to equip a specific loadout directly from `CfgLoadouts`:
+```sqf
+[this, "Equip Heavy Weapons Gunner", "Cav_B_B_Weapons_Gunner_F"] call deScripts_fnc_addLoadoutAction;
+```
+
+---
+
+### 3. Aviation & Vehicle Helpers
+
+#### **Helicopter Quick Dismount** (`deScripts_fnc_addGetOutHelo`)
+Adds quick-dismount actions ("Get out Left Side" / "Get out Right Side") to transport helicopters for rapid cargo egress:
+```sqf
+[this] call deScripts_fnc_addGetOutHelo;
+```
+
+#### **Escape Wreck** (`deScripts_fnc_addEscapeWreck`)
+Attaches a hold action to aircraft allowing pilots, crew, and passengers to safely egress destroyed or burning wrecks:
+```sqf
+[this] call deScripts_fnc_addEscapeWreck;
+```
+
+#### **Tactical Vehicle Decals & Callouts** (`deScripts_fnc_setVehicleLable`)
+Attaches tactical unit markings, platoon letters, and numbers to vehicles using 3D textures:
+```sqf
+// UH-60 Black Hawk Tail Markings (Letter, Number):
+[this, "B", "1"] call deScripts_fnc_setVehicleLable;
+
+// C-130 Hercules Markings:
+[this, "A", "2"] call deScripts_fnc_setVehicleLable;
+
+// Red Cross / Medical Decal:
+[this, "RedCross"] call deScripts_fnc_setVehicleLable;
+```
+
+---
+
+### 4. Base Optimization & Training Ranges
+
+#### **Ambient Base AI Optimizer** (`deScripts_fnc_makeAgent`)
+Converts an editor-placed AI soldier into an ambient Arma agent (`createAgent`). Strips combat FSM overhead, weapon processing, and pathfinding compute, drastically boosting server FPS at main operating bases:
+```sqf
+[this] call deScripts_fnc_makeAgent;
+```
+
+#### **Range Target Hit Indicator** (`deScripts_fnc_training_addHitIndicator`)
+Spawns 3D impact marker spheres on target silhouettes where bullets strike:
+```sqf
+// Mark hits directly on target:
+[this] call deScripts_fnc_training_addHitIndicator;
+
+// Mirror hits onto a separate shooter feedback board:
+[this, feedbackBoardObject] call deScripts_fnc_training_addHitIndicator;
+```
+
+#### **Range Target Control Console** (`deScripts_fnc_training_addTargetComputer`)
+Disables automatic target popup and links targets to a control object/laptop with a "Reset Range Targets" interaction:
+```sqf
+[this, [target1, target2, target3, target4]] call deScripts_fnc_training_addTargetComputer;
+```
+
+---
+
+## 3. Root Files & Engine Entry Points
 
 | File | Purpose & Architectural Role | When / How It Runs | Key Parameters / Variables |
 |---|---|---|---|
@@ -133,7 +311,7 @@ deScripts is structured around **CBA Extended Event Handlers (XEH)**, **ACE3 int
 
 ---
 
-## 3. deScripts Core Headers & Life-Cycle Scripts
+## 4. deScripts Core Headers & Life-Cycle Scripts
 
 | File | Purpose & Architectural Role | When / How It Runs | Key Contents / Details |
 |---|---|---|---|
@@ -146,7 +324,7 @@ deScripts is structured around **CBA Extended Event Handlers (XEH)**, **ACE3 int
 
 ---
 
-## 4. Initialization Subsystem (`deScripts/functions/init/`)
+## 5. Initialization Subsystem (`deScripts/functions/init/`)
 
 | File | Function | Purpose & How It Works |
 |---|---|---|
@@ -161,7 +339,7 @@ deScripts is structured around **CBA Extended Event Handlers (XEH)**, **ACE3 int
 
 ---
 
-## 5. Gear & Loadout Subsystem
+## 6. Gear & Loadout Subsystem
 
 The Gear subsystem automates loadout assignment, saves customized kits, resolves role inheritance, and enforces equipment standards.
 
@@ -216,7 +394,7 @@ When a unit spawns, respawns, or changes locality, `deScripts_fnc_gear_selectLoa
 
 ---
 
-## 6. Logistics & Cargo Subsystem (`deScripts/functions/logistics/`)
+## 7. Logistics & Cargo Subsystem (`deScripts/functions/logistics/`)
 
 | File | Function | Purpose & How It Works |
 |---|---|---|
@@ -235,7 +413,7 @@ When a unit spawns, respawns, or changes locality, `deScripts_fnc_gear_selectLoa
 
 ---
 
-## 7. Mission Helpers (`deScripts/functions/mission/`)
+## 8. Mission Helpers (`deScripts/functions/mission/`)
 
 | File | Function | Purpose & How It Works |
 |---|---|---|
@@ -250,7 +428,7 @@ When a unit spawns, respawns, or changes locality, `deScripts_fnc_gear_selectLoa
 
 ---
 
-## 8. Systems Engine (`deScripts/functions/systems/`)
+## 9. Systems Engine (`deScripts/functions/systems/`)
 
 The Systems engine powers interactive menus, staging mechanics, airborne physics, training range automation, and server diagnostics.
 
@@ -293,7 +471,7 @@ The Systems engine powers interactive menus, staging mechanics, airborne physics
 
 ---
 
-## 9. ZEN Zeus Modules (`deScripts/functions/modules/`)
+## 10. ZEN Zeus Modules (`deScripts/functions/modules/`)
 
 Modules registered into the ZEN (Zeus Enhanced) interface for Game Masters during operations.
 
@@ -308,7 +486,7 @@ Modules registered into the ZEN (Zeus Enhanced) interface for Game Masters durin
 
 ---
 
-## 10. Documents & Briefing Checklists (`deScripts/functions/documents/`)
+## 11. Documents & Briefing Checklists (`deScripts/functions/documents/`)
 
 Post-initialization functions that build tactical references in the player's in-game briefing screen under `"Chklists"` and `"radioReports"`.
 
@@ -326,7 +504,7 @@ Post-initialization functions that build tactical references in the player's in-
 
 ---
 
-## 11. Diagnostics & Automated Testing (`diag/` & `testing/`)
+## 12. Diagnostics & Automated Testing (`diag/` & `testing/`)
 
 | File | Function | Purpose & How It Works |
 |---|---|---|
@@ -339,7 +517,7 @@ Post-initialization functions that build tactical references in the player's in-
 
 ---
 
-## 12. Data Assets Summary (`Data/` & `deScripts/Data/`)
+## 13. Data Assets Summary (`Data/` & `deScripts/Data/`)
 
 - `Data/MissionLogo.paa` & `Data/MissionLogo.psd`: Loading screen and overview graphic displayed during mission load.
 - `deScripts/Data/Icon/`: Custom UI icons for ACE interactions and loadout locker menus (`icon_arsenal_ca.paa`, `icon_00.paa`, `icon_x.paa`, etc.).
@@ -347,7 +525,7 @@ Post-initialization functions that build tactical references in the player's in-
 
 ---
 
-## 13. Common Maintenance Tasks ("Where do I change X?")
+## 14. Common Maintenance Tasks ("Where do I change X?")
 
 | Desired Change | Primary Files to Modify | Notes |
 |---|---|---|
