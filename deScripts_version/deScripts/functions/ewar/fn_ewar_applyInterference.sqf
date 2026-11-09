@@ -1,7 +1,7 @@
 #include "..\script_component.hpp";
 /*
  * Author: deScripts Team
- * Applies progressive visual/audio interference and 5-bar HUD signal indicator to a UAV operator,
+ * Applies progressive visual/audio interference and color-coded 5-bar HUD signal indicator to a UAV operator,
  * and triggers the hard cutoff fail-safe at critical jamming intensity.
  *
  * Arguments:
@@ -37,8 +37,8 @@ if (cameraOn isEqualTo _uav) then {
         };
         private _normIntensity = (_intensity / 0.84) min 1.0;
         GVAR(ewar_grainHandle) ppEffectAdjust [
-            _normIntensity * 0.85,
-            0.15,
+            (_normIntensity * 0.70) min 0.70,
+            0.2,
             2.0,
             1.0,
             1.0,
@@ -93,13 +93,43 @@ if (cameraOn isEqualTo _uav) then {
         private _signalRatio = (1 - (_intensity / 0.84)) max 0 min 1;
         private _activeBars = round (_signalRatio * 5);
 
-        {
-            if (_forEachIndex < _activeBars) then {
-                _x ctrlSetBackgroundColor [1, 1, 1, 0.9];
+        // Color coding based on remaining signal bars
+        private _barColor = switch (_activeBars) do {
+            case 5: { [1, 1, 1, 0.95] };           // 5 bars: White
+            case 4: { [1, 0.85, 0.1, 0.95] };      // 4 bars: Yellow
+            case 3;
+            case 2: { [1, 0.5, 0.05, 0.95] };      // 3 or 2 bars: Orange
+            case 1: { [0.95, 0.15, 0.15, 0.95] };  // 1 bar: Red
+            default { [0.95, 0.15, 0.15, 0.95] };  // 0 bars
+        };
+
+        private _dimColor = [0.45, 0.45, 0.45, 0.35];
+
+        if (_activeBars == 0) then {
+            // Flash the 1st bar (index 0) in red at 1 Hz (0.5s toggle)
+            GVAR(ewar_flashState) = !(missionNamespace getVariable [QGVAR(ewar_flashState), false]);
+            private _flashRed = if (GVAR(ewar_flashState)) then {
+                [0.95, 0.1, 0.1, 0.95]
             } else {
-                _x ctrlSetBackgroundColor [0.45, 0.45, 0.45, 0.35];
+                [0.45, 0.1, 0.1, 0.25]
             };
-        } forEach GVAR(ewar_signalBars);
+
+            {
+                if (_forEachIndex == 0) then {
+                    _x ctrlSetBackgroundColor _flashRed;
+                } else {
+                    _x ctrlSetBackgroundColor _dimColor;
+                };
+            } forEach GVAR(ewar_signalBars);
+        } else {
+            {
+                if (_forEachIndex < _activeBars) then {
+                    _x ctrlSetBackgroundColor _barColor;
+                } else {
+                    _x ctrlSetBackgroundColor _dimColor;
+                };
+            } forEach GVAR(ewar_signalBars);
+        };
     };
 } else {
     call FUNC(ewar_clearFX);
