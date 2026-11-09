@@ -175,6 +175,18 @@ class deScripts {
         class log {};
         class warning {};
     };
+    class ewar {
+        file = "deScripts\functions\ewar";
+        class ewar_preInit { preInit = 1; };
+        class ewar_postInit { postInit = 1; };
+        class ewar_addJammer {};
+        class ewar_removeJammer {};
+        class ewar_clientLoop {};
+        class ewar_applyInterference {};
+        class ewar_clearFX {};
+        class ewar_handleFailsafe {};
+        class ewar_executeFailsafe {};
+    };
     class testing {
         file = "deScripts\functions\testing";
         class testing_loadoutArrays {};

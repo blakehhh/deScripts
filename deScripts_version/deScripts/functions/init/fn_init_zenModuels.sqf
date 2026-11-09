@@ -100,5 +100,95 @@ INFO("init", "Initializing custom Zen Modules.");
 ] call zen_custom_modules_fnc_register;
 
 
+["TFG EWAR", "Create Jammer Area",
+    {
+        params ["_modulePos", "_objectPos"];
+        [
+            "Create EWAR Jammer Area",
+            [
+                ["SLIDER", ["Jamming Radius (m)", "Outer radius of the jamming bubble in meters"], [50, 1500, 300, 0], false],
+                ["SLIDER", ["Core Cut Ratio", "Inner fraction of radius where link is completely severed (0 = interference only)"], [0, 0.9, 0, 2], false],
+                ["COMBO", ["Exempt Side", "Faction unaffected by this jammer"], [[sideUnknown, west, east, independent, civilian], ["None (Affect All)", "BLUFOR", "OPFOR", "Independent", "Civilian"], 0], false]
+            ],
+            {
+                params ["_dialogValues", "_args"];
+                _dialogValues params ["_radius", "_coreRatio", "_sideExempt"];
+                _args params ["_posATL"];
+                [_posATL, round _radius, _coreRatio, _sideExempt] call FUNC(ewar_addJammer);
+                [format ["Created EWAR jammer bubble (%1m radius)", round _radius]] call zen_common_fnc_showMessage;
+            },
+            {},
+            [ASLToATL _modulePos]
+        ] call zen_dialog_fnc_create;
+    },
+    "\a3\modules_f\data\portraitmodule_ca.paa"
+] call zen_custom_modules_fnc_register;
+
+["TFG EWAR", "Attach Jammer to Object",
+    {
+        params ["_modulePos", "_objectPos"];
+        if (isNull _objectPos) exitWith {
+            ["Select a vehicle or object to attach the jammer to"] call zen_common_fnc_showMessage;
+        };
+        [
+            "Attach EWAR Jammer to Object",
+            [
+                ["SLIDER", ["Jamming Radius (m)", "Outer radius of the jamming bubble in meters"], [50, 1500, 300, 0], false],
+                ["SLIDER", ["Core Cut Ratio", "Inner fraction of radius where link is completely severed (0 = interference only)"], [0, 0.9, 0, 2], false],
+                ["COMBO", ["Exempt Side", "Faction unaffected by this jammer"], [[sideUnknown, west, east, independent, civilian], ["None (Affect All)", "BLUFOR", "OPFOR", "Independent", "Civilian"], 0], false]
+            ],
+            {
+                params ["_dialogValues", "_args"];
+                _dialogValues params ["_radius", "_coreRatio", "_sideExempt"];
+                _args params ["_targetObj"];
+                if (isNull _targetObj) exitWith {};
+                [_targetObj, round _radius, _coreRatio, _sideExempt] call FUNC(ewar_addJammer);
+                [format ["Attached EWAR jammer (%1m radius) to %2", round _radius, getText (configOf _targetObj >> "displayName")]] call zen_common_fnc_showMessage;
+            },
+            {},
+            [_objectPos]
+        ] call zen_dialog_fnc_create;
+    },
+    "\a3\modules_f\data\portraitmodule_ca.paa"
+] call zen_custom_modules_fnc_register;
+
+["TFG EWAR", "Remove Nearby Jammers",
+    {
+        params ["_modulePos", "_objectPos"];
+        if (!isNull _objectPos) then {
+            private _attachedID = _objectPos getVariable [QGVAR(ewar_jammerID), ""];
+            if (_attachedID != "") exitWith {
+                [_objectPos] call FUNC(ewar_removeJammer);
+                ["Removed EWAR jammer from object"] call zen_common_fnc_showMessage;
+            };
+        };
+
+        private _posATL = ASLToATL _modulePos;
+        private _removedCount = 0;
+        if (!isNil QGVAR(ewar_jammers)) then {
+            private _toRemove = [];
+            {
+                _x params ["_id", "_source"];
+                private _jPos = if (_source isEqualType objNull) then {
+                    if (isNull _source) then { [0, 0, 0] } else { getPosATL _source }
+                } else {
+                    _source
+                };
+                if (_jPos isNotEqualTo [0, 0, 0] && {(_posATL distance _jPos) <= 100}) then {
+                    _toRemove pushBack _id;
+                };
+            } forEach GVAR(ewar_jammers);
+
+            {
+                [_x] call FUNC(ewar_removeJammer);
+                _removedCount = _removedCount + 1;
+            } forEach _toRemove;
+        };
+        [format ["Removed %1 EWAR jammer(s) within 100m", _removedCount]] call zen_common_fnc_showMessage;
+    },
+    "\a3\modules_f\data\portraitmodule_ca.paa"
+] call zen_custom_modules_fnc_register;
+
+
 
 INFO("init", "Custom Zen Modules initialization complete");

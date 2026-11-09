@@ -48,6 +48,8 @@ cScripts_fnc_setupLoadoutCategories = FUNC(setupLoadoutCategories);
 cScripts_fnc_setupLoadoutSelection = FUNC(setupLoadoutSelection);
 cScripts_fnc_createCargoCrate = FUNC(createCargoCrate);
 cScripts_fnc_setCargoAttributes = FUNC(setCargoAttributes);
+cScripts_fnc_ewar_addJammer = FUNC(ewar_addJammer);
+cScripts_fnc_ewar_removeJammer = FUNC(ewar_removeJammer);
 
 #include "initSettings.inc.sqf"
 

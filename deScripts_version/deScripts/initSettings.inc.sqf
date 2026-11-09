@@ -130,4 +130,28 @@ private _deScriptSettings = "deScripts Mission Settings";
     true
 ] call CBA_fnc_addSetting;
 
+// 9; Electronic Warfare
+[
+    QEGVAR(Settings,ewar_enable),
+    "CHECKBOX",
+    ["Enable EWAR Drone Jamming", "Enables counter-UAS jamming fields and interference."],
+    [_deScriptSettings, "9; Electronic Warfare"],
+    true,
+    true,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    QEGVAR(Settings,ewar_failsafeBehavior),
+    "LIST",
+    ["Drone Fail-safe Behavior", "What happens to drones when link is completely cut."],
+    [_deScriptSettings, "9; Electronic Warfare"],
+    [[0, 1, 2], ["Realistic (Quads Auto-Land, Planes Orbit)", "Engine Cut (All Crash)", "Disconnect Terminal Only"], 0],
+    true,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+
 
