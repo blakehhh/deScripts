@@ -13,6 +13,7 @@
    - [Staging Logistics, Crates & Lockers](#2-staging-logistics-crates--lockers)
    - [Aviation & Vehicle Helpers](#3-aviation--vehicle-helpers)
    - [Base Optimization & Training Ranges](#4-base-optimization--training-ranges)
+   - [Electronic Warfare & Drone Jamming (C-UAS)](#5-electronic-warfare--drone-jamming-c-uas)
 3. [Root Files & Engine Entry Points](#3-root-files--engine-entry-points)
 4. [deScripts Core Headers & Life-Cycle Scripts](#4-cscripts-core-headers--life-cycle-scripts)
 5. [Initialization Subsystem (`deScripts/functions/init/`)](#5-initialization-subsystem-cscriptsfunctionsinit)
@@ -24,10 +25,11 @@
 8. [Mission Helpers (`deScripts/functions/mission/`)](#8-mission-helpers-cscriptsfunctionsmission)
 9. [Systems Engine (`deScripts/functions/systems/`)](#9-systems-engine-cscriptsfunctionssystems)
 10. [ZEN Zeus Modules (`deScripts/functions/modules/`)](#10-zen-zeus-modules-cscriptsfunctionsmodules)
-11. [Documents & Briefing Checklists (`deScripts/functions/documents/`)](#11-documents--briefing-checklists-cscriptsfunctionsdocuments)
-12. [Diagnostics & Automated Testing (`diag/` & `testing/`)](#12-diagnostics--automated-testing-diag--testing)
-13. [Data Assets Summary (`Data/` & `deScripts/Data/`)](#13-data-assets-summary-data--cscriptsdata)
-14. [Common Maintenance Tasks ("Where do I change X?")](#14-common-maintenance-tasks-where-do-i-change-x)
+11. [Electronic Warfare Subsystem (`deScripts/functions/ewar/`)](#11-electronic-warfare-subsystem-descriptsfunctionsewar)
+12. [Documents & Briefing Checklists (`deScripts/functions/documents/`)](#12-documents--briefing-checklists-cscriptsfunctionsdocuments)
+13. [Diagnostics & Automated Testing (`diag/` & `testing/`)](#13-diagnostics--automated-testing-diag--testing)
+14. [Data Assets Summary (`Data/` & `deScripts/Data/`)](#14-data-assets-summary-data--cscriptsdata)
+15. [Common Maintenance Tasks ("Where do I change X?")](#15-common-maintenance-tasks-where-do-i-change-x)
 
 ---
 
@@ -49,8 +51,11 @@ deScripts is structured around **CBA Extended Event Handlers (XEH)**, **ACE3 int
   │
 [Phase 1: Engine Function PreInit (preInit = 1)]
   │
-  └──> deScripts_fnc_gear_preInit
-          └── Registers CBA class event handlers on "CAManBase" (InitPost, Respawn, Local)
+  ├──> deScripts_fnc_gear_preInit
+  │       └── Registers CBA class event handlers on "CAManBase" (InitPost, Respawn, Local)
+  │
+  └──> deScripts_fnc_ewar_preInit
+          └── Initializes GVAR(ewar_jammers) and binds synchronized CBA network event handlers
   │
 [Phase 2: CBA Extended PreInit]
   │
@@ -71,8 +76,11 @@ deScripts is structured around **CBA Extended Event Handlers (XEH)**, **ACE3 int
   │
 [Phase 4: Engine Function PostInit (postInit = 1)]
   │
-  └──> deScripts_fnc_gear_postInitProxy -> deScripts_fnc_gear_postInit
-          └── Hooks "ace_arsenal_displayClosed" to auto-cache custom loadouts
+  ├──> deScripts_fnc_gear_postInitProxy -> deScripts_fnc_gear_postInit
+  │       └── Hooks "ace_arsenal_displayClosed" to auto-cache custom loadouts
+  │
+  └──> deScripts_fnc_ewar_postInit
+          └── Starts 0.5s client-side UAV jamming evaluation loop (CBA PFH) on player machines
   │
 [Phase 5: CBA Extended PostInit]
   │
@@ -300,6 +308,50 @@ Disables automatic target popup and links targets to a control object/laptop wit
 
 ---
 
+### 5. Electronic Warfare & Drone Jamming (C-UAS)
+
+#### **Add EWAR Jammer** (`deScripts_fnc_ewar_addJammer` / `cScripts_fnc_ewar_addJammer`)
+Attaches an omnidirectional counter-UAS electronic jamming bubble to any vehicle, radar dish, structure, marker, or position. When an enemy or player drone enters the bubble, the operator experiences progressive RF video snow, audio clicks, and a dynamic 5-bar HUD signal degradation meter.
+
+```sqf
+// Standard 300m Jammer Bubble (Interference-only, defaults to 0 critical cut):
+[this] call deScripts_fnc_ewar_addJammer;
+
+// 500m Bubble attached to an enemy radar truck:
+[this, 500] call deScripts_fnc_ewar_addJammer;
+
+// 400m Bubble with inner 30% hard cutoff (drones within 120m are forced into fail-safe):
+[this, 400, 0.3] call deScripts_fnc_ewar_addJammer;
+
+// 600m Jammer attached to a map marker, exempting BLUFOR (west) drones:
+["marker_jammer_obj", 600, 0, west] call deScripts_fnc_ewar_addJammer;
+```
+
+**Parameters Reference:**
+```sqf
+/*
+ * Arguments:
+ * 0: Source Object, Position, or Marker <OBJECT|ARRAY|STRING>
+ * 1: Max Jamming Radius in meters       <NUMBER>  (Default: 300)
+ * 2: Core Cut Ratio (0 = soft only)     <NUMBER>  (Default: 0 - 0.3 = inner 30% severs link)
+ * 3: Exempt Side(s)                     <SIDE|ARRAY> (Default: sideUnknown)
+ *
+ * Return: Jammer ID <STRING>
+ */
+```
+
+#### **Remove EWAR Jammer** (`deScripts_fnc_ewar_removeJammer` / `cScripts_fnc_ewar_removeJammer`)
+Dynamically disables and cleans up an active jammer by its returned ID or attached source object:
+```sqf
+// Remove by object reference:
+[this] call deScripts_fnc_ewar_removeJammer;
+
+// Remove by ID string:
+["ewar_jammer_12345_67"] call deScripts_fnc_ewar_removeJammer;
+```
+
+---
+
 ## 3. Root Files & Engine Entry Points
 
 | File | Purpose & Architectural Role | When / How It Runs | Key Parameters / Variables |
@@ -335,7 +387,7 @@ Disables automatic target popup and links targets to a control object/laptop wit
 | `fn_init_eventHandlers.sqf` | `deScripts_fnc_init_eventHandlers` | Registers framework event handlers: CBA `deScripts_getAttendance`, server log routing (`deScripts_log_text`), and connection tracking (`PlayerConnected` -> `deScripts_log_players` HashMap). |
 | `fn_init_logistics.sqf` | `deScripts_fnc_init_logistics` | Parses and compiles `deScripts_logistics.sqf` into an in-memory HashMap stored in the global variable `deScripts_DATABASE`. |
 | `fn_init_message.sqf` | `deScripts_fnc_init_message` | Runs on client postInit. Validates server difficulty (warns in chat if not Veteran/Custom) and handles player welcome messages. |
-| `fn_init_zenModuels.sqf` | `deScripts_fnc_init_zenModuels` | Registers custom Task Force Grey curator modules into ZEN under categories `"TFG AI"`, `"TFG Logistics"`, `"TFG Utilities"`, and `"TFG Mission"`. |
+| `fn_init_zenModuels.sqf` | `deScripts_fnc_init_zenModuels` | Registers custom Task Force Grey curator modules into ZEN under categories `"TFG AI"`, `"TFG Logistics"`, `"TFG Utilities"`, `"TFG Mission"`, and `"TFG EWAR"`. |
 
 ---
 
@@ -471,22 +523,56 @@ The Systems engine powers interactive menus, staging mechanics, airborne physics
 
 ---
 
-## 10. ZEN Zeus Modules (`deScripts/functions/modules/`)
+## 10. ZEN Zeus Modules (`deScripts/functions/modules/` & `fn_init_zenModuels.sqf`)
 
 Modules registered into the ZEN (Zeus Enhanced) interface for Game Masters during operations.
 
-| File | Function | Purpose & How It Works |
+| Category | Module Display Name | Purpose & How It Works |
 |---|---|---|
-| `fn_zenModule_applyLoadout.sqf` | `deScripts_fnc_zenModule_applyLoadout` | ZEN dialog allowing Zeus to select any loadout from `CfgLoadouts` and force-apply it to a clicked player or AI unit. |
-| `fn_zenModule_callEndex.sqf` | `deScripts_fnc_zenModule_callEndex` | Declares ENDEX (End of Exercise). Locks player weapon safeties, pacifies AI groups (Careless/Blue), heals all players, and triggers attendance logging. |
-| `fn_zenModule_createStarterCrate.sqf` | `deScripts_fnc_zenModule_createStarterCrate` | Spawns a full 7th Cavalry staging crate in the field with configurable company filters, heal actions, and arsenal toggles. |
-| `fn_zenModule_createSupplyCrate.sqf` | `deScripts_fnc_zenModule_createSupplyCrate` | Spawns resupply crates (Infantry Resupply, Atlas Medical, Infantry Medical, Stinger MANPAD). |
-| `fn_zenModule_enableUnitSimulation.sqf` | `deScripts_fnc_zenModule_enableUnitSimulation` | Wakes up frozen or cached AI groups by enabling simulation and un-hiding objects globally. |
-| `fn_zenModule_regearTrooper.sqf` | `deScripts_fnc_zenModule_regearTrooper` | Re-applies the assigned starting loadout to a clicked unit to quickly re-arm them in the field. |
+| `TFG AI` | Enable Unit Simulation | Wakes up frozen or cached AI groups by enabling simulation and un-hiding objects globally. |
+| `TFG Logistics` | Spawn Starter Crate | Spawns a full 7th Cavalry staging crate in the field with configurable company filters, heal actions, and arsenal toggles. |
+| `TFG Logistics` | Spawn Re-supply Crate | Spawns resupply crates (Infantry Resupply, Atlas Medical, Infantry Medical, Stinger MANPAD). |
+| `TFG Utilities` | Apply Loadout | ZEN dialog allowing Zeus to select any loadout from `CfgLoadouts` and force-apply it to a clicked player or AI unit. |
+| `TFG Utilities` | Regear Trooper | Re-applies the assigned starting loadout to a clicked unit to quickly re-arm them in the field. |
+| `TFG Mission` | Call Endex | Declares ENDEX (End of Exercise). Locks player weapon safeties, pacifies AI groups (Careless/Blue), heals all players, and triggers attendance logging. |
+| `TFG Mission` | Take Attendance | Dumps attendance logs of all connected players to the Zeus operator's RPT log. |
+| `TFG EWAR` | Create Jammer Area | Prompts Zeus for outer radius (50m–1500m), inner hard-cut core ratio (0–0.9), and faction exemptions; places a static jamming bubble at the clicked position. |
+| `TFG EWAR` | Attach Jammer to Object | Attaches a mobile or destructible jammer bubble to a clicked vehicle or object (automatically ceases jamming if the object is destroyed). |
+| `TFG EWAR` | Remove Nearby Jammers | Removes a jammer directly from a clicked object or clears all active jammers within 100m of the cursor. |
 
 ---
 
-## 11. Documents & Briefing Checklists (`deScripts/functions/documents/`)
+## 11. Electronic Warfare Subsystem (`deScripts/functions/ewar/`)
+
+The EWAR subsystem models omnidirectional counter-UAS (C-UAS) electronic jamming fields. The monitoring routine runs strictly **client-side** on players currently controlling an unmanned asset (`getConnectedUAV player != objNull`), ensuring near-zero server and non-operator overhead.
+
+### Functions Reference
+
+| File | Function | Purpose & How It Works |
+|---|---|---|
+| `fn_ewar_preInit.sqf` | `deScripts_fnc_ewar_preInit` | Runs during engine preInit (`preInit = 1`). Initializes `GVAR(ewar_jammers)` with JIP synchronization and binds synchronized CBA event handlers for adding/removing jammers. |
+| `fn_ewar_postInit.sqf` | `deScripts_fnc_ewar_postInit` | Runs during engine postInit (`postInit = 1`). Starts the 0.5-second client-side `CBA_fnc_addPerFrameHandler` loop on player machines (`hasInterface`). |
+| `fn_ewar_addJammer.sqf` | `deScripts_fnc_ewar_addJammer` | Public API (`[source, radius, coreRatio, sideExempt]`) to register a new jammer on an object, marker, or coordinate. Broadcasts globally via CBA events. |
+| `fn_ewar_removeJammer.sqf` | `deScripts_fnc_ewar_removeJammer` | Public API to unregister an active jammer by its ID string or attached object reference. |
+| `fn_ewar_clientLoop.sqf` | `deScripts_fnc_ewar_clientLoop` | Periodic client evaluation routine. Calculates normalized distance intensity (`0.0` to `1.0`) against all active jammers for the player's connected UAV. |
+| `fn_ewar_applyInterference.sqf` | `deScripts_fnc_ewar_applyInterference` | Applies progressive `FilmGrain` static and subtle `ChromAberration` with `ppEffectForceInNVG true`, renders a dynamic 5-bar ascending signal strength HUD meter, and plays audible static clicks. |
+| `fn_ewar_clearFX.sqf` | `deScripts_fnc_ewar_clearFX` | Destroys post-processing effect handles, deletes HUD signal bar controls, and resets internal state flags when exiting camera or leaving jamming bubbles. |
+| `fn_ewar_handleFailsafe.sqf` | `deScripts_fnc_ewar_handleFailsafe` | Severs player terminal connection (`player connectTerminalToUav objNull`), resets camera, and triggers `deScripts_ewar_executeDroneFailsafe` target event where the drone is local. |
+| `fn_ewar_executeFailsafe.sqf` | `deScripts_fnc_ewar_executeFailsafe` | Executes physical fail-safe behavior where the vehicle is local, based on CBA setting `deScripts_Settings_ewar_failsafeBehavior`. |
+
+### Platform Fail-Safe Behaviors (Realistic Mode)
+
+| Unmanned Vehicle Class | Examples (Vanilla / `@GX - Drones` / `@Arma 3 Aegis`) | Physical Fail-Safe Behavior |
+|---|---|---|
+| **Rotary & Micro-UAVs** | AR-2 Darter, FLIR Black Hornet, Hunter, MQ-8B Fire Scout, AL-6 Pelican | Terminal disconnects; waypoints cleared; initiates controlled vertical auto-land descent (`_uav land "LAND"`). |
+| **Fixed-Wing Recon UAVs** | RQ-11B Raven, MQ-4A Greyhawk, UCAV Sentinel, K40 Ababil, Shikra | Terminal disconnects; attack waypoints cleared; enters autonomous 250m circular holding orbit (`LOITER`). |
+| **Loitering Munitions / FPVs** | Drone 40, explosive-rigged FPV quadcopters, `isKamikaze` tagged drones | Terminal disconnects; engine instantly killed (`HitEngine = 1`); falls ballistically. |
+| **Ground UGVs** | THeMIS, Honeybadger, UGV Stomper, ED-1D/E Demining UGVs | Terminal disconnects; waypoints cleared; brakes engaged (`setVelocity [0,0,0]`); engine stopped. |
+| **Naval USVs** | Magura V5 USV | Terminal disconnects; waypoints cleared; propulsion stopped; drifts on water current. |
+
+---
+
+## 12. Documents & Briefing Checklists (`deScripts/functions/documents/`)
 
 Post-initialization functions that build tactical references in the player's in-game briefing screen under `"Chklists"` and `"radioReports"`.
 
@@ -504,7 +590,7 @@ Post-initialization functions that build tactical references in the player's in-
 
 ---
 
-## 12. Diagnostics & Automated Testing (`diag/` & `testing/`)
+## 13. Diagnostics & Automated Testing (`diag/` & `testing/`)
 
 | File | Function | Purpose & How It Works |
 |---|---|---|
@@ -517,7 +603,7 @@ Post-initialization functions that build tactical references in the player's in-
 
 ---
 
-## 13. Data Assets Summary (`Data/` & `deScripts/Data/`)
+## 14. Data Assets Summary (`Data/` & `deScripts/Data/`)
 
 - `Data/MissionLogo.paa` & `Data/MissionLogo.psd`: Loading screen and overview graphic displayed during mission load.
 - `deScripts/Data/Icon/`: Custom UI icons for ACE interactions and loadout locker menus (`icon_arsenal_ca.paa`, `icon_00.paa`, `icon_x.paa`, etc.).
@@ -525,7 +611,7 @@ Post-initialization functions that build tactical references in the player's in-
 
 ---
 
-## 14. Common Maintenance Tasks ("Where do I change X?")
+## 15. Common Maintenance Tasks ("Where do I change X?")
 
 | Desired Change | Primary Files to Modify | Notes |
 |---|---|---|
@@ -534,6 +620,7 @@ Post-initialization functions that build tactical references in the player's in-
 | **Change forced ACE / mission settings** | `cba_settings.sqf` | Look for `force force <settingName> = <value>;`. |
 | **Add or adjust framework CBA settings** | `deScripts/initSettings.inc.sqf` | Uses `CBA_fnc_addSetting`. |
 | **Add a new Zeus curator module** | `deScripts/functions/init/fn_init_zenModuels.sqf` & `deScripts/functions/modules/` | Register the module with `zen_custom_modules_fnc_register` and create the module handler. |
+| **Adjust EWAR drone jamming, static, or fail-safes** | `deScripts/functions/ewar/` & `deScripts/initSettings.inc.sqf` | Edit `fn_ewar_applyInterference.sqf` for visuals/HUD and `fn_ewar_executeFailsafe.sqf` for platform reactions. |
 | **Add a briefing checklist or SOP card** | `deScripts/functions/documents/` & `fn_init_diary.sqf` | Create a new `fn_DocChklist_*.sqf` and call it inside `fn_init_diary.sqf`. |
 | **Ban or permit an equipment classname** | `deScripts/deScripts_blacklist.sqf` | Add or remove classnames from the returned blacklist array. |
 | **Add a tactical vehicle decal / number** | `deScripts/functions/systems/fn_getVehicleLable.sqf` & `fn_setVehicleLable.sqf` | Add decal mapping in `fn_getVehicleLable.sqf` and model offset coordinates in `fn_setVehicleLable.sqf`. |
