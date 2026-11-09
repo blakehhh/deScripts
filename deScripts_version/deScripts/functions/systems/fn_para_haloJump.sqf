@@ -42,7 +42,7 @@ _player allowDamage false;
 private _dir = getDir _vehicle - 50; 
 moveOut _player; 
 private _pos = ([_vehicle, 14, ((getDir _vehicle) + 180 + _offset)] call BIS_fnc_relPos); 
-_pos = [_pos#0, _pos#1, ((getPosATL _vehicle)#2)];; 
+_pos = [_pos#0, _pos#1, ((getPosATL _vehicle)#2)]; 
 _player setPosATL _pos; 
 _player setDir _dir - 140;
 

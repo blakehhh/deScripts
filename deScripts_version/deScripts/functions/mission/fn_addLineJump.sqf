@@ -8,14 +8,14 @@
  * 1: Minimum altetude    <NUMBER> (Optional) (Default; 180)
  * 2: Maximum altetude    <NUMBER> (Optional) (Default; 350)
  * 3: Maximum speed       <NUMBER> (Optional) (Default; 310)
- * 4: Chute Vehicle Class <OBJECT> (Optional) (Default; "rhs_d6_Parachute")
+ * 4: Chute Vehicle Class <OBJECT> (Optional) (Default; "NonSteerable_Parachute_F")
  * 5: Staggared Jump <BOOL> (Optional) [Default; false]
  *
  * Example:
  * ["my_c130"] call deScripts_fnc_addLineJump
  * ["my_c130", 180] call deScripts_fnc_addLineJump
  * ["my_c130", 180, 350, 310] call deScripts_fnc_addLineJump
- * ["my_c130", 180, 350, 310, "rhs_d6_Parachute", false] call deScripts_fnc_addLineJump
+ * ["my_c130", 180, 350, 310, "NonSteerable_Parachute_F", false] call deScripts_fnc_addLineJump
  *
  */
 
@@ -24,7 +24,7 @@ params [
     ["_minAltetude", 180, [180]],
     ["_maxAltetude", 350, [350]],
     ["_maxSpeed", 310, [310]],
-    ["_chuteVehicleClass", "rhs_d6_Parachute", ["rhs_d6_Parachute"]],
+    ["_chuteVehicleClass", "NonSteerable_Parachute_F", [""]],
     ["_allowStaggared", false, [false]]
 ];
 
@@ -32,15 +32,20 @@ params [
 if (!isNil {_vehicle getVariable QEGVAR(VehicleFunc,JumpAction)}) exitWith {SHOW_WARNING_1("JumpAction", "Aircraft jump setting already applied for %1.", _vehicle)};
 
 private _doors = tostring {
-    ((_target animationPhase 'ramp_bottom' > 0.64) ||   // RHS_C130J
+    ((_target animationPhase 'ramp_bottom' > 0.64) ||   // RHS_C130J / Aegis C-130
+    (_target animationPhase 'ramp' > 0.5) ||            // Vanilla / PJC C-130
+    (_target doorPhase 'ramp' > 0.5) ||
     (_target animationPhase 'door_2_1' == 1) ||         // RHS_C130J
     (_target animationPhase 'door_2_2' == 1) ||         // RHS_C130J
+    (_target animationPhase 'door_1' > 0.5) ||          // Aegis / PJC paratroop door
+    (_target animationPhase 'door_2' > 0.5) ||          // Aegis / PJC paratroop door
     (_target animationPhase 'jumpdoor_1' == 1) ||
     (_target animationPhase 'jumpdoor_2' == 1) ||
     (_target animationPhase 'back_ramp_switch' == 1) ||
     (_target animationPhase 'back_ramp_half_switch' == 1) ||
     (_target doorPhase 'RearDoors' > 0.5) ||
-    (_target doorPhase 'Door_1_source' > 0.5) ||
+    (_target doorPhase 'Door_1_source' > 0.5) ||        // V-44X Blackfish
+    (_target animationSourcePhase 'Door_1_source' > 0.5) || // V-44X Blackfish
     (_target animationSourcePhase 'ramp_anim' > 0.5) ||
     (_target animationPhase 'Ramp' < 0.5))              // TF373_RAF_HC5, TF373_SOAR_MH47G_No_Rear_Guns
 };
