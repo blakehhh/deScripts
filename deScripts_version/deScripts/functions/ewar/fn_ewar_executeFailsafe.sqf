@@ -2,6 +2,7 @@
 /*
  * Author: deScripts Team
  * Executes physical fail-safe behavior on a jammed unmanned vehicle where it is local.
+ * Switches invisible crew to civilian so cTAB, ATAK, and UAV terminals drop connection.
  * Supports Vanilla, @GX - Drones, and @Arma 3 Aegis assets.
  *
  * Arguments:
@@ -19,6 +20,21 @@
 params ["_uav"];
 
 if (isNull _uav || {!local _uav}) exitWith {};
+
+// Switch invisible AI crew to civilian so cTAB, ATAK, and UAV terminals immediately drop connection
+private _crew = crew _uav;
+if (_crew isNotEqualTo []) then {
+    if (isNil {_uav getVariable QGVAR(ewar_originalSide)}) then {
+        private _origGrp = group (_crew select 0);
+        _uav setVariable [QGVAR(ewar_originalGroup), _origGrp, true];
+        _uav setVariable [QGVAR(ewar_originalSide), side _origGrp, true];
+    };
+    private _civGroup = createGroup [civilian, true];
+    _crew joinSilent _civGroup;
+};
+
+// Register in active jammed drones list for recovery monitoring
+[QGVAR(ewar_registerJammedDrone), [_uav]] call CBA_fnc_globalEvent;
 
 // Check CBA setting mode (0: Realistic, 1: Engine Cut, 2: Terminal Disconnect Only)
 private _behavior = EGVAR(Settings,ewar_failsafeBehavior);

@@ -186,6 +186,11 @@ class deScripts {
         class ewar_clearFX {};
         class ewar_handleFailsafe {};
         class ewar_executeFailsafe {};
+        class ewar_restoreDroneSide {};
+        class ewar_recoveryLoop {};
+        class ewar_toggleBackpackJammer {};
+        class ewar_reloadBackpackBattery {};
+        class ewar_updateBackpackHUD {};
     };
     class testing {
         file = "deScripts\functions\testing";

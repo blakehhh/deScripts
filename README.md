@@ -538,27 +538,45 @@ Modules registered into the ZEN (Zeus Enhanced) interface for Game Masters durin
 | `TFG Mission` | Take Attendance | Dumps attendance logs of all connected players to the Zeus operator's RPT log. |
 | `TFG EWAR` | Create Jammer Area | Prompts Zeus for outer radius (50m–1500m), inner hard-cut core ratio (0–0.9), and faction exemptions; places a static jamming bubble at the clicked position. |
 | `TFG EWAR` | Attach Jammer to Object | Attaches a mobile or destructible jammer bubble to a clicked vehicle or object (automatically ceases jamming if the object is destroyed). |
+| `TFG EWAR` | Equip Jammer Backpack (AI) | Equips a faction-appropriate `B_RadioBag_01_*` backpack onto a clicked AI soldier and enables an EWAR jammer bubble until the unit's death. |
 | `TFG EWAR` | Remove Nearby Jammers | Removes a jammer directly from a clicked object or clears all active jammers within 100m of the cursor. |
 
 ---
 
 ## 11. Electronic Warfare Subsystem (`deScripts/functions/ewar/`)
 
-The EWAR subsystem models omnidirectional counter-UAS (C-UAS) electronic jamming fields. The monitoring routine runs strictly **client-side** on players currently controlling an unmanned asset (`getConnectedUAV player != objNull`), ensuring near-zero server and non-operator overhead.
+The EWAR subsystem models counter-UAS (C-UAS) electronic jamming fields and man-portable jammer backpacks (`B_RadioBag_01_*`). The monitoring routine runs strictly **client-side** on players, ensuring near-zero server overhead.
+
+### Operational Modes & Directional Combo
+* **Omni-Directional Mode (Backpack only):**
+  * When wearing any `B_RadioBag_01_*` Radio Pack and holding a standard weapon or empty hands, the jammer emits an omnidirectional spherical bubble (**200m outer radius**, **75m hard kill core** at default `0.375` ratio).
+  * Battery draws at standard power rate (**30 minutes** continuous operation on a single UAV battery).
+  * RCU Mini-HUD displays `RF: 200m OMNI` and `TX ON`.
+* **Directional Combo Mode (Backpack + Spectrum Device `hgun_esd_01_F` in hands):**
+  * When drawing and holding the Contact DLC **Spectrum Device** (`hgun_esd_01_F`), RF power is focused through the handheld antenna into a forward **3D 45° conical beam** aligned with the weapon's muzzle bore-sight (`weaponDirection`).
+  * Range is tripled to **600m** with a **225m** hard kill zone.
+  * Battery draws at **1.5x power** (**20 minutes** continuous operation on a full battery).
+  * RCU Mini-HUD updates in real time to `RF: 600m DIR 45°` and `TX DIR 1.5X`, displaying active `TX LOCK` alerts with tactical audio chirps in ADS view when sweeping over targeted drones.
+  * **Option A Flank Mechanics:** 100% of RF energy is focused forward; flanking or rear drones are unaffected unless the operator swings the beam to intercept them.
 
 ### Functions Reference
 
 | File | Function | Purpose & How It Works |
 |---|---|---|
 | `fn_ewar_preInit.sqf` | `deScripts_fnc_ewar_preInit` | Runs during engine preInit (`preInit = 1`). Initializes `GVAR(ewar_jammers)` with JIP synchronization and binds synchronized CBA event handlers for adding/removing jammers. |
-| `fn_ewar_postInit.sqf` | `deScripts_fnc_ewar_postInit` | Runs during engine postInit (`postInit = 1`). Starts the 0.5-second client-side `CBA_fnc_addPerFrameHandler` loop on player machines (`hasInterface`). |
+| `fn_ewar_postInit.sqf` | `deScripts_fnc_ewar_postInit` | Runs during engine postInit (`postInit = 1`). Starts the 0.5-second client-side `CBA_fnc_addPerFrameHandler` loop, recovery monitor, and registers ACE self-interactions under `Equipment > EWAR Jammer`. |
 | `fn_ewar_addJammer.sqf` | `deScripts_fnc_ewar_addJammer` | Public API (`[source, radius, coreRatio, sideExempt]`) to register a new jammer on an object, marker, or coordinate. Broadcasts globally via CBA events. |
 | `fn_ewar_removeJammer.sqf` | `deScripts_fnc_ewar_removeJammer` | Public API to unregister an active jammer by its ID string or attached object reference. |
-| `fn_ewar_clientLoop.sqf` | `deScripts_fnc_ewar_clientLoop` | Periodic client evaluation routine. Calculates normalized distance intensity (`0.0` to `1.0`) against all active jammers for the player's connected UAV. |
+| `fn_ewar_clientLoop.sqf` | `deScripts_fnc_ewar_clientLoop` | Periodic client evaluation routine. Manages backpack jammer battery drain/HUD updates and calculates normalized distance intensity (`0.0` to `1.0`) against all active jammers for the player's connected UAV. |
 | `fn_ewar_applyInterference.sqf` | `deScripts_fnc_ewar_applyInterference` | Applies progressive `FilmGrain` static and subtle `ChromAberration` with `ppEffectForceInNVG true`, renders a dynamic color-coded 5-bar ascending signal strength HUD meter (White $\rightarrow$ Yellow $\rightarrow$ Orange $\rightarrow$ Red $\rightarrow$ Flashing Red), and plays audible static clicks. |
 | `fn_ewar_clearFX.sqf` | `deScripts_fnc_ewar_clearFX` | Destroys post-processing effect handles, deletes HUD signal bar controls, and resets internal state flags when exiting camera or leaving jamming bubbles. |
 | `fn_ewar_handleFailsafe.sqf` | `deScripts_fnc_ewar_handleFailsafe` | Severs player terminal connection (`player connectTerminalToUav objNull`), resets camera, and triggers `deScripts_ewar_executeDroneFailsafe` target event where the drone is local. |
-| `fn_ewar_executeFailsafe.sqf` | `deScripts_fnc_ewar_executeFailsafe` | Executes physical fail-safe behavior where the vehicle is local, based on CBA setting `deScripts_Settings_ewar_failsafeBehavior`. |
+| `fn_ewar_executeFailsafe.sqf` | `deScripts_fnc_ewar_executeFailsafe` | Executes physical fail-safe behavior where the vehicle is local. Switches invisible AI crew to civilian so cTAB, ATAK, and UAV terminals drop tracking/feeds. |
+| `fn_ewar_restoreDroneSide.sqf` | `deScripts_fnc_ewar_restoreDroneSide` | Restores a recovered UAV's crew back to its original faction/group once it exits all active jammer crit zones or the jammer is destroyed. |
+| `fn_ewar_recoveryLoop.sqf` | `deScripts_fnc_ewar_recoveryLoop` | Lightweight 2-second background monitor (server & clients) that checks actively jammed drones and restores them when clear of jamming fields. |
+| `fn_ewar_toggleBackpackJammer.sqf` | `deScripts_fnc_ewar_toggleBackpackJammer` | Toggles the player's worn `B_RadioBag_01_*` backpack jammer on/off, verifies battery charge, and triggers a 5-second transient RCU HUD popup. |
+| `fn_ewar_reloadBackpackBattery.sqf` | `deScripts_fnc_ewar_reloadBackpackBattery` | Plays a 4-second ACE progress bar and consumes 1 `GX_UAVBattery` or `ACE_UAVBattery` from inventory to restore the backpack jammer battery to 100%. |
+| `fn_ewar_updateBackpackHUD.sqf` | `deScripts_fnc_ewar_updateBackpackHUD` | Renders and updates the lower-right RCU Mini-HUD widget with Green/Red status LED, 4-segment vertical battery icon, and Show/Hide persistence. |
 
 ### Platform Fail-Safe Behaviors (Realistic Mode)
 

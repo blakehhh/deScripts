@@ -20,6 +20,10 @@ if (isNil QGVAR(ewar_jammers)) then {
     GVAR(ewar_jammers) = [];
 };
 
+if (isNil QGVAR(ewar_jammedDrones)) then {
+    GVAR(ewar_jammedDrones) = [];
+};
+
 GVAR(ewar_activeFX) = false;
 GVAR(ewar_nextStaticSound) = [0];
 
@@ -51,4 +55,21 @@ GVAR(ewar_nextStaticSound) = [0];
     if (isNull _uav) exitWith {};
     if (!local _uav) exitWith {};
     [_uav] call FUNC(ewar_executeFailsafe);
+}] call CBA_fnc_addEventHandler;
+
+// Event handler for registering jammed drone
+[QGVAR(ewar_registerJammedDrone), {
+    params ["_uav"];
+    if (isNull _uav) exitWith {};
+    if (isNil QGVAR(ewar_jammedDrones)) then {
+        GVAR(ewar_jammedDrones) = [];
+    };
+    GVAR(ewar_jammedDrones) pushBackUnique _uav;
+}] call CBA_fnc_addEventHandler;
+
+// Event handler for unregistering jammed drone
+[QGVAR(ewar_unregisterJammedDrone), {
+    params ["_uav"];
+    if (isNil QGVAR(ewar_jammedDrones)) exitWith {};
+    GVAR(ewar_jammedDrones) = GVAR(ewar_jammedDrones) select { !isNull _x && {_x isNotEqualTo _uav} };
 }] call CBA_fnc_addEventHandler;

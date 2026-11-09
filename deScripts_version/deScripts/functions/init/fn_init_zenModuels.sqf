@@ -152,6 +152,91 @@ INFO("init", "Initializing custom Zen Modules.");
     "\a3\modules_f\data\portraitmodule_ca.paa"
 ] call zen_custom_modules_fnc_register;
 
+["TFG EWAR", "Equip Jammer Backpack (AI)",
+    {
+        params ["_modulePos", "_objectPos"];
+        if (isNull _objectPos || {!(_objectPos isKindOf "CAManBase")} || {!alive _objectPos}) exitWith {
+            ["Select a living soldier to equip the EWAR Jammer Backpack"] call zen_common_fnc_showMessage;
+        };
+
+        private _unitSide = side (group _objectPos);
+        private _defaultSideIdx = switch (_unitSide) do {
+            case west: { 1 };
+            case east: { 2 };
+            case independent: { 3 };
+            case civilian: { 4 };
+            default { 0 };
+        };
+
+        private _defaultBagIdx = switch (_unitSide) do {
+            case west: { 0 };
+            case east: { 4 };
+            case independent: { 6 };
+            default { 3 };
+        };
+
+        [
+            "Equip EWAR Jammer Backpack (AI)",
+            [
+                [
+                    "COMBO",
+                    ["Radio Pack Camo", "Select Radio Pack variant to equip on the unit"],
+                    [
+                        [
+                            "B_RadioBag_01_mtp_F",
+                            "B_RadioBag_01_wdl_F",
+                            "B_RadioBag_01_tropic_F",
+                            "B_RadioBag_01_black_F",
+                            "B_RadioBag_01_hex_F",
+                            "B_RadioBag_01_ghex_F",
+                            "B_RadioBag_01_digi_F",
+                            "B_RadioBag_01_eaf_F",
+                            "B_RadioBag_01_oucamo_F"
+                        ],
+                        [
+                            "Radio Pack (MTP)",
+                            "Radio Pack (Woodland)",
+                            "Radio Pack (Tropic)",
+                            "Radio Pack (Black)",
+                            "Radio Pack (Hex)",
+                            "Radio Pack (Green Hex)",
+                            "Radio Pack (AAF Digital)",
+                            "Radio Pack (LDF Geometric)",
+                            "Radio Pack (Urban)"
+                        ],
+                        _defaultBagIdx
+                    ],
+                    false
+                ],
+                ["SLIDER", ["Jamming Radius (m)", "Outer radius of the jamming bubble in meters"], [50, 1500, 200, 0], false],
+                ["SLIDER", ["Core Cut Ratio", "Inner fraction of radius where link is completely severed (0.375 = 75m at 200m)"], [0, 0.9, 0.375, 3], false],
+                ["COMBO", ["Exempt Side", "Faction unaffected by this jammer"], [[sideUnknown, west, east, independent, civilian], ["None (Affect All)", "BLUFOR", "OPFOR", "Independent", "Civilian"], _defaultSideIdx], false]
+            ],
+            {
+                params ["_dialogValues", "_args"];
+                _dialogValues params ["_bagClass", "_radius", "_coreRatio", "_sideExempt"];
+                _args params ["_unit"];
+                if (isNull _unit || {!alive _unit}) exitWith {};
+
+                if ((toLower (backpack _unit)) find "b_radiobag_01" == -1) then {
+                    removeBackpackGlobal _unit;
+                    _unit addBackpackGlobal _bagClass;
+                };
+
+                [_unit] call FUNC(ewar_removeJammer);
+                private _jammerID = [_unit, round _radius, _coreRatio, _sideExempt] call FUNC(ewar_addJammer);
+                _unit setVariable [QGVAR(ewar_isJammerActive), true, true];
+                _unit setVariable [QGVAR(ewar_jammerID), _jammerID, true];
+
+                [format ["Equipped EWAR Jammer Backpack (%1m radius) on %2", round _radius, name _unit]] call zen_common_fnc_showMessage;
+            },
+            {},
+            [_objectPos]
+        ] call zen_dialog_fnc_create;
+    },
+    "\a3\modules_f\data\portraitmodule_ca.paa"
+] call zen_custom_modules_fnc_register;
+
 ["TFG EWAR", "Remove Nearby Jammers",
     {
         params ["_modulePos", "_objectPos"];

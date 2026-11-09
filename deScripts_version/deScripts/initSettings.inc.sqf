@@ -153,5 +153,82 @@ private _deScriptSettings = "deScripts Mission Settings";
     true
 ] call CBA_fnc_addSetting;
 
+[
+    QEGVAR(Settings,ewar_backpackRadius),
+    "SLIDER",
+    ["Backpack Jammer Radius (m)", "Jamming radius of player-operated Radio Pack backpacks."],
+    [_deScriptSettings, "9; Electronic Warfare"],
+    [50, 600, 200, 0],
+    true,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    QEGVAR(Settings,ewar_backpackCoreRatio),
+    "SLIDER",
+    ["Backpack Core Cut Ratio", "Inner fraction of radius where link is completely severed (0.375 = 75m kill at 200m radius)."],
+    [_deScriptSettings, "9; Electronic Warfare"],
+    [0, 0.9, 0.375, 3],
+    true,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    QEGVAR(Settings,ewar_backpackRequiresBattery),
+    "CHECKBOX",
+    ["Backpack Requires Batteries", "Requires UAV batteries (GX or ACE) to power player backpack jammers."],
+    [_deScriptSettings, "9; Electronic Warfare"],
+    true,
+    true,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    QEGVAR(Settings,ewar_backpackBatteryLife),
+    "SLIDER",
+    ["Battery Runtime (Minutes)", "Duration a single UAV battery will power the backpack jammer."],
+    [_deScriptSettings, "9; Electronic Warfare"],
+    [1, 60, 30, 0],
+    true,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    QEGVAR(Settings,ewar_directionalMultiplier),
+    "SLIDER",
+    ["Directional Range Multiplier", "Range amplification factor when wielding the Spectrum Device (hgun_esd_01_F)."],
+    [_deScriptSettings, "9; Electronic Warfare"],
+    [1.5, 5.0, 3.0, 1],
+    true,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    QEGVAR(Settings,ewar_directionalConeAngle),
+    "SLIDER",
+    ["Directional 3D Cone Angle (Degrees)", "Total 3D beam width angle when aiming the Spectrum Device."],
+    [_deScriptSettings, "9; Electronic Warfare"],
+    [15, 90, 45, 0],
+    true,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    QEGVAR(Settings,ewar_directionalPowerDrain),
+    "SLIDER",
+    ["Directional Battery Drain Multiplier", "Battery drain rate multiplier when operating in directional mode."],
+    [_deScriptSettings, "9; Electronic Warfare"],
+    [1.0, 3.0, 1.5, 1],
+    true,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
 
 
