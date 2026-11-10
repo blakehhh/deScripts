@@ -152,7 +152,7 @@ if (hasInterface) then {
 
         private _beamWideAction = [
             QGVAR(ewar_beamWide),
-            "Wide (45° | 600m | 3x)",
+            "Military Horn (45° | 600m | 3x)",
             "",
             {
                 params ["_target", "_player"];
@@ -166,7 +166,7 @@ if (hasInterface) then {
 
         private _beamFocusedAction = [
             QGVAR(ewar_beamFocused),
-            "Focused (20° | 1000m | 4x)",
+            "Cross-Dipole Array (20° | 1000m | 4x)",
             "",
             {
                 params ["_target", "_player"];
@@ -180,7 +180,7 @@ if (hasInterface) then {
 
         private _beamSpotAction = [
             QGVAR(ewar_beamSpot),
-            "Spot (10° | 1500m | 5x)",
+            "Jammer Radome Tube (10° | 1500m | 5x)",
             "",
             {
                 params ["_target", "_player"];
@@ -305,11 +305,11 @@ if (hasInterface) then {
             "<font size='14' color='#ffe044'>B. Directional Hunter Combo (Spectrum Device)</font><br/>" +
             "* <font color='#e0f4e0'>Equipment:</font> Draw the Contact DLC Spectrum Device (<font face='EtelkaMonospacePro'>hgun_esd_01_F</font>) while wearing a Radio Pack.<br/>" +
             "* <font color='#e0f4e0'>Beam Modes &amp; 3D Antennas:</font> Press <font color='#68d4f8'>PageUp / PageDown</font> (or ACE menu) to swap the physical 3D muzzle antenna (2-second progress bar):<br/>" +
-            "  - <font color='#68d4f8'>Wide (45° | Dish Antenna):</font> 600m max range / 3x power drain (15 min runtime).<br/>" +
-            "  - <font color='#68d4f8'>Focused (20° | Yagi Grid):</font> 1000m max range / 4x power drain (11.2 min runtime).<br/>" +
-            "  - <font color='#68d4f8'>Spot (10° | Military Horn):</font> 1500m max range / 5x power drain (9 min runtime).<br/>" +
+            "  - <font color='#68d4f8'>Military Horn Paddle (45°):</font> 600m max range / 3x power drain (15 min runtime).<br/>" +
+            "  - <font color='#68d4f8'>Cross-Dipole Array (20°):</font> 1000m max range / 4x power drain (11.2 min runtime).<br/>" +
+            "  - <font color='#68d4f8'>Jammer Radome Tube (10°):</font> 1500m max range / 5x power drain (9 min runtime).<br/>" +
             "* <font color='#e0f4e0'>Passive Scanner &amp; Trigger Pulse (STBY Mode):</font><br/>" +
-            "  - Even when the backpack is OFF (<font color='#f05050'>STBY</font>, 0% battery drain), the Spectrum Device passively scans up to <font color='#e0f4e0'>1500m</font> (<font color='#68d4f8'>SCAN</font> indicator).<br/>" +
+            "  - Even when the backpack is OFF (<font color='#f05050'>STBY</font>, 0% battery drain), the Spectrum Device passively scans up to the attached antenna's range (<font color='#68d4f8'>600m / 1000m / 1500m</font> with <font color='#68d4f8'>SCAN</font> indicator).<br/>" +
             "  - <font color='#68d4f8'>Hold Left-Click (Trigger):</font> Fires a momentary directional RF burst (<font color='#68d4f8'>PULSE</font>), engaging burn-through lock and draining battery only while the trigger is held.<br/>" +
             "* <font color='#e0f4e0'>RF Waveform Threat Identification (KAISERKOM LCD):</font><br/>" +
             "  - <font color='#ffe044'>Quadcopters / FPVs:</font> Jittering 2-peak twin spike (Control + Analog Video carrier).<br/>" +

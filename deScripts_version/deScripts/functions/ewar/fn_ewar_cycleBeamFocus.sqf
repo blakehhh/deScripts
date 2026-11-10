@@ -56,9 +56,9 @@ private _antennaClass = switch (_newMode) do {
 };
 
 private _barTitle = switch (_newMode) do {
-    case 1: { "Mounting Focused Yagi Antenna (20° / 1000m)..." };
-    case 2: { "Installing Military Horn Antenna (10° / 1500m)..." };
-    default { "Attaching Wide Dish Antenna (45° / 600m)..." };
+    case 1: { "Mounting Cross-Dipole Array (20° / 1000m)..." };
+    case 2: { "Installing Jammer Radome Tube (10° / 1500m)..." };
+    default { "Attaching Military Horn Paddle (45° / 600m)..." };
 };
 
 private _fnc_applySwap = {

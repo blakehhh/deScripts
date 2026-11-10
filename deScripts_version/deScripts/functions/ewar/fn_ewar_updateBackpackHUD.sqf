@@ -140,7 +140,13 @@ if (_holdingESD) then {
     GVAR(ewar_lastBurnTick) = diag_tickTime;
 
     private _exemptFriendly = missionNamespace getVariable [QEGVAR(Settings,ewar_backpackExemptFriendly), true];
-    private _scanRadius = 1500;
+    // Antenna scan aperture and detection range scale with physical antenna attachment
+    private _scanRadius = _effRadius;
+    private _scanAperture = switch (_beamMode) do {
+        case 1: { 30 };
+        case 2: { 15 };
+        default { 45 };
+    };
     private _nearbyUavs = _playerEye nearEntities [["Air", "Car", "Tank"], _scanRadius];
     private _lockedUav = objNull;
 
@@ -168,13 +174,13 @@ if (_holdingESD) then {
                     if (_relAz > 180) then { _relAz = _relAz - 360; };
                     if (_relAz < -180) then { _relAz = _relAz + 360; };
 
-                    // Plot any UAV within +/- 45 degrees horizontal bearing onto the LCD graph
-                    if (abs _relAz <= 45) then {
+                    // Plot any UAV within antenna aperture horizontal bearing onto the LCD graph
+                    if (abs _relAz <= _scanAperture) then {
                         _passiveSignalDetected = true;
-                        private _freq = (2450 + ((_relAz / 45) * 50)) max 2405 min 2495;
-                        private _distFactor = 1 - ((_dist / _scanRadius) min 0.92);
+                        private _freq = (2450 + ((_relAz / _scanAperture) * 50)) max 2405 min 2495;
+                        private _distFactor = 1 - ((_dist / (_scanRadius max 1)) min 0.92);
                         private _elevDiff = abs (_angle3D - (abs _relAz));
-                        private _pitchFactor = 1 - ((_elevDiff / 45) min 0.80);
+                        private _pitchFactor = 1 - ((_elevDiff / _scanAperture) min 0.80);
                         private _strength = (12 + (_distFactor * 82)) * _pitchFactor;
 
                         if (_isDirectional && {_isTransmitting} && {_dist <= _effRadius} && {_angle3D <= _halfAngle}) then {
@@ -270,12 +276,12 @@ if (_holdingESD) then {
                             if (_jRelAz > 180) then { _jRelAz = _jRelAz - 360; };
                             if (_jRelAz < -180) then { _jRelAz = _jRelAz + 360; };
 
-                            if (abs _jRelAz <= 45) then {
+                            if (abs _jRelAz <= _scanAperture) then {
                                 _passiveSignalDetected = true;
-                                private _jFreq = (2450 + ((_jRelAz / 45) * 50)) max 2408 min 2492;
-                                private _jDistFactor = 1 - ((_jDist / _scanRadius) min 0.90);
+                                private _jFreq = (2450 + ((_jRelAz / _scanAperture) * 50)) max 2408 min 2492;
+                                private _jDistFactor = 1 - ((_jDist / (_scanRadius max 1)) min 0.90);
                                 private _jElevDiff = abs (_jAngle3D - (abs _jRelAz));
-                                private _jPitchFactor = 1 - ((_jElevDiff / 45) min 0.75);
+                                private _jPitchFactor = 1 - ((_jElevDiff / _scanAperture) min 0.75);
                                 private _jStrength = (20 + (_jDistFactor * 78)) * _jPitchFactor;
 
                                 // Populate every 0.5 MHz bin from -7.0 to +7.0 (29 contiguous bins) for a solid noise barrage
@@ -576,7 +582,7 @@ if (_isDirectional) then {
         if (_passiveSignalDetected) then {
             _ledCore ctrlSetBackgroundColor [0.25, 0.70, 0.95, 1.0];
             _modeTxt ctrlSetStructuredText parseText "<t align='left' size='0.74' font='PuristaBold' color='#68d4f8'>SCAN</t>";
-            _ftrTxt ctrlSetStructuredText parseText format ["<t align='center' size='0.56' font='PuristaMedium' color='#68d4f8'>SCAN: 1500m [%1°]</t>", round _coneAngle];
+            _ftrTxt ctrlSetStructuredText parseText format ["<t align='center' size='0.56' font='PuristaMedium' color='#68d4f8'>SCAN: %1m [%2°]</t>", _scanRadius, round _coneAngle];
         } else {
             _ledCore ctrlSetBackgroundColor [0.95, 0.15, 0.15, 1.0];
             _modeTxt ctrlSetStructuredText parseText "<t align='left' size='0.74' font='PuristaBold' color='#d8b8b8'>STBY</t>";
