@@ -30,6 +30,7 @@
 13. [Diagnostics & Automated Testing (`diag/` & `testing/`)](#13-diagnostics--automated-testing-diag--testing)
 14. [Data Assets Summary (`Data/` & `deScripts/Data/`)](#14-data-assets-summary-data--cscriptsdata)
 15. [Common Maintenance Tasks ("Where do I change X?")](#15-common-maintenance-tasks-where-do-i-change-x)
+16. [License & Attribution](#16-license--attribution)
 
 ---
 
@@ -654,3 +655,13 @@ Post-initialization functions that build tactical references in the player's in-
 | **Add a briefing checklist or SOP card** | `deScripts/functions/documents/` & `fn_init_diary.sqf` | Create a new `fn_DocChklist_*.sqf` and call it inside `fn_init_diary.sqf`. |
 | **Ban or permit an equipment classname** | `deScripts/deScripts_blacklist.sqf` | Add or remove classnames from the returned blacklist array. |
 | **Add a tactical vehicle decal / number** | `deScripts/functions/systems/fn_getVehicleLable.sqf` & `fn_setVehicleLable.sqf` | Add decal mapping in `fn_getVehicleLable.sqf` and model offset coordinates in `fn_setVehicleLable.sqf`. |
+
+---
+
+## 16. License & Attribution
+
+**deScripts** is an open-source derivative and modernization of **[cScripts](https://github.com/7Cav/cScripts)**, originally created by **Andreas Brostrom (`Brostrom.A`)** and contributors of the **7th Cavalry Gaming Regiment**.
+
+* Modified and expanded with updated subsystems, configurations, and the `deScripts` namespace architecture.
+* Distributed under the **GNU General Public License v3.0 (GPLv3)**. See [`LICENSE`](LICENSE) for full terms.
+
