@@ -75,7 +75,10 @@ private _maxIntensity = 0;
 
 if (!isNil QGVAR(ewar_jammers) && {GVAR(ewar_jammers) isNotEqualTo []}) then {
     private _uavPos = getPosATL _uav;
-    private _uavPosASL = getPosASL _uav;
+    private _uavPosASL = aimPos _uav;
+    if (_uavPosASL isEqualTo [0, 0, 0]) then {
+        _uavPosASL = (getPosASL _uav) vectorAdd [0, 0, 1.0];
+    };
     private _uavSide = if (!isNull (driver _uav)) then { side (group (driver _uav)) } else { side (group player) };
 
     {
@@ -108,16 +111,13 @@ if (!isNil QGVAR(ewar_jammers) && {GVAR(ewar_jammers) isNotEqualTo []}) then {
                     default { _baseCone };
                 };
                 private _halfAngle = _coneAngle * 0.5;
-
                 private _effRadius = _radius * _dirMult;
-                private _effCoreRatio = _coreRatio max 0 min 0.95;
-                private _coreDist = _effRadius * _effCoreRatio;
 
                 private _sourceEyePos = eyePos _source;
                 private _vecToUav = _uavPosASL vectorDiff _sourceEyePos;
                 private _dist = vectorMagnitude _vecToUav;
 
-                if (_dist <= _effRadius) then {
+                if (_dist <= _effRadius && {_dist > 0.1}) then {
                     private _rawDir = _source weaponDirection (currentWeapon _source);
                     if (_rawDir isEqualTo [] || {_rawDir isEqualTo [0, 0, 0]}) then {
                         _rawDir = eyeDirection _source;
@@ -133,13 +133,22 @@ if (!isNil QGVAR(ewar_jammers) && {GVAR(ewar_jammers) isNotEqualTo []}) then {
                     private _angleDeg = acos _dot;
 
                     if (_angleDeg <= _halfAngle) then {
-                        private _burnLevel = (_uav getVariable [QGVAR(ewar_burnIntensity), 0]) max 0 min 1;
-                        if (!finite _burnLevel) then { _burnLevel = 0; };
-                        private _baseIntensity = 0.25 + (0.55 * (1 - (_dist / (_effRadius max 1))));
-                        private _intensity = (_baseIntensity + ((1.0 - _baseIntensity) * (_burnLevel ^ 1.2))) min 1.0;
-                        if (!finite _intensity) then { _intensity = _baseIntensity; };
-                        if (_intensity > _maxIntensity) then {
-                            _maxIntensity = _intensity;
+                        private _terrainBlocked = terrainIntersectASL [_sourceEyePos, _uavPosASL];
+                        if (!_terrainBlocked) then {
+                            private _objBlocked = lineIntersects [_sourceEyePos, _uavPosASL, _source, _uav];
+                            private _burnLevel = (_uav getVariable [QGVAR(ewar_burnIntensity), 0]) max 0 min 1;
+                            if (!finite _burnLevel) then { _burnLevel = 0; };
+                            private _baseIntensity = 0.25 + (0.55 * (1 - (_dist / (_effRadius max 1))));
+                            private _intensity = if (_objBlocked) then {
+                                // Grazing interference when obstructed by buildings/walls
+                                _baseIntensity * 0.35
+                            } else {
+                                (_baseIntensity + ((1.0 - _baseIntensity) * (_burnLevel ^ 1.2))) min 1.0
+                            };
+                            if (!finite _intensity) then { _intensity = 0; };
+                            if (_intensity > _maxIntensity) then {
+                                _maxIntensity = _intensity;
+                            };
                         };
                     };
                 };
@@ -162,7 +171,18 @@ if (!isNil QGVAR(ewar_jammers) && {GVAR(ewar_jammers) isNotEqualTo []}) then {
                         private _intensity = if (_coreRatio > 0 && {_dist <= _coreDist}) then {
                             1.0
                         } else {
-                            0.84 * (1 - ((_dist - _coreDist) / ((_radius - _coreDist) max 1)))
+                            private _rawInt = 0.84 * (1 - ((_dist - _coreDist) / ((_radius - _coreDist) max 1)));
+                            private _srcASL = if (_source isEqualType objNull) then {
+                                private _ap = aimPos _source;
+                                if (_ap isEqualTo [0, 0, 0]) then { (getPosASL _source) vectorAdd [0, 0, 1.5] } else { _ap }
+                            } else {
+                                (ATLToASL _source) vectorAdd [0, 0, 1.5]
+                            };
+                            if (terrainIntersectASL [_srcASL, _uavPosASL]) then {
+                                _rawInt * 0.25
+                            } else {
+                                _rawInt
+                            }
                         };
                         if (_intensity > _maxIntensity) then {
                             _maxIntensity = _intensity;

@@ -341,11 +341,12 @@ if (hasInterface) then {
             "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Passive SCAN (0% Battery):</font> In <font color='#f05050'>STBY</font>, the device passively receives signals up to the attached antenna's range. Drones appear on the graph as you sweep your crosshair across their bearing.<br/>" +
             "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Momentary Trigger Pulse:</font> Holding <font face='EtelkaMonospacePro' color='#ffffff'>[ LEFT CLICK ]</font> fires an immediate directional RF burst (<font color='#68d4f8'>PULSE</font>), initiating burn-through lock without having to manually switch on the backpack jammer.<br/><br/>" +
 
-            "<font size='14' color='#ffe044'>D. Burn-Through Lock Mechanics</font><br/>" +
+            "<font size='14' color='#ffe044'>D. Burn-Through Lock &amp; Line of Sight</font><br/>" +
+            "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Line-of-Sight Required:</font> Buildings/walls dampen passive signals (60%) and hills heavily attenuate them (25%). Active directional burn-through requires a clear sightline; obstacles block lock charging.<br/>" +
             "<font color='#68d4f8'>▪</font> Keep the target's yellow signal centered inside the vertical cyan selection gate on the LCD screen.<br/>" +
             "<font color='#68d4f8'>▪</font> The lock progress bar charges from <font color='#ffe044'>0% to 100%</font> as the audio tone climbs in pitch.<br/>" +
             "<font color='#68d4f8'>▪</font> Dwell time scales with distance: 5s at close range, 15-20s at mid-range, up to 30s at 1500m.<br/>" +
-            "<font color='#68d4f8'>▪</font> If your aim slips off target, progress decays gradually over 6-8 seconds instead of wiping instantly.<br/>" +
+            "<font color='#68d4f8'>▪</font> If your aim slips or the drone ducks behind cover, progress decays gradually over 6-8 seconds instead of wiping instantly.<br/>" +
             "<font color='#68d4f8'>▪</font> At 100% lock, link is severed (<font color='#ff4444'>KILL</font>) and the drone drops into fail-safe!"
         ]];
 

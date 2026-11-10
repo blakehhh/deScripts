@@ -158,7 +158,11 @@ if (_holdingESD) then {
             private _origSide = _x getVariable [QGVAR(ewar_originalSide), _uavSide];
             private _isValidTarget = (!_exemptFriendly || {_origSide != _playerSide}) && {_origSide != sideUnknown};
             if (_isValidTarget) then {
-                private _vec = (getPosASL _x) vectorDiff _playerEye;
+                private _uavAimPos = aimPos _x;
+                if (_uavAimPos isEqualTo [0, 0, 0]) then {
+                    _uavAimPos = (getPosASL _x) vectorAdd [0, 0, 1.0];
+                };
+                private _vec = _uavAimPos vectorDiff _playerEye;
                 private _dist = vectorMagnitude _vec;
                 if (_dist <= _scanRadius && {_dist > 0.1}) then {
                     private _uavDir = vectorNormalized _vec;
@@ -177,14 +181,27 @@ if (_holdingESD) then {
 
                     // Plot any UAV within antenna aperture horizontal bearing onto the LCD graph
                     if (abs _relAz <= _scanAperture) then {
+                        private _terrainBlocked = terrainIntersectASL [_playerEye, _uavAimPos];
+                        private _objBlocked = if (_terrainBlocked) then {
+                            true
+                        } else {
+                            lineIntersects [_playerEye, _uavAimPos, player, _x]
+                        };
+                        private _losFactor = if (_terrainBlocked) then {
+                            0.25
+                        } else {
+                            if (_objBlocked) then { 0.60 } else { 1.0 }
+                        };
+
                         _passiveSignalDetected = true;
                         private _freq = (2450 + ((_relAz / _scanAperture) * 50)) max 2405 min 2495;
                         private _distFactor = 1 - ((_dist / (_scanRadius max 1)) min 0.92);
                         private _elevDiff = abs (_angle3D - (abs _relAz));
                         private _pitchFactor = 1 - ((_elevDiff / _scanAperture) min 0.80);
-                        private _strength = (12 + (_distFactor * 82)) * _pitchFactor;
+                        private _strength = (12 + (_distFactor * 82)) * _pitchFactor * _losFactor;
 
-                        if (_isDirectional && {_isTransmitting} && {_dist <= _effRadius} && {_angle3D <= _halfAngle}) then {
+                        // Active directional burn-through requires clear Line-of-Sight (not blocked by terrain or solid structures)
+                        if (!_terrainBlocked && {!_objBlocked} && {_isDirectional} && {_isTransmitting} && {_dist <= _effRadius} && {_angle3D <= _halfAngle}) then {
                             _targetInCone = true;
                             if (_dist < _lockedDist) then {
                                 _lockedDist = _dist;
@@ -254,9 +271,14 @@ if (_holdingESD) then {
 
                 if (!_isFriendlyJammer) then {
                     private _jPosASL = if (_jSource isEqualType objNull) then {
-                        if (isNull _jSource || {!alive _jSource}) then { [0, 0, 0] } else { getPosASL _jSource }
+                        if (isNull _jSource || {!alive _jSource}) then {
+                            [0, 0, 0]
+                        } else {
+                            private _ap = aimPos _jSource;
+                            if (_ap isEqualTo [0, 0, 0]) then { (getPosASL _jSource) vectorAdd [0, 0, 1.5] } else { _ap }
+                        }
                     } else {
-                        ATLToASL _jSource
+                        (ATLToASL _jSource) vectorAdd [0, 0, 1.5]
                     };
 
                     if (_jPosASL isNotEqualTo [0, 0, 0]) then {
@@ -278,12 +300,25 @@ if (_holdingESD) then {
                             if (_jRelAz < -180) then { _jRelAz = _jRelAz + 360; };
 
                             if (abs _jRelAz <= _scanAperture) then {
+                                private _jTerrainBlocked = terrainIntersectASL [_playerEye, _jPosASL];
+                                private _jIgnoreObj = if (_jSource isEqualType objNull) then { _jSource } else { objNull };
+                                private _jObjBlocked = if (_jTerrainBlocked) then {
+                                    true
+                                } else {
+                                    lineIntersects [_playerEye, _jPosASL, player, _jIgnoreObj]
+                                };
+                                private _jLosFactor = if (_jTerrainBlocked) then {
+                                    0.25
+                                } else {
+                                    if (_jObjBlocked) then { 0.60 } else { 1.0 }
+                                };
+
                                 _passiveSignalDetected = true;
                                 private _jFreq = (2450 + ((_jRelAz / _scanAperture) * 50)) max 2408 min 2492;
                                 private _jDistFactor = 1 - ((_jDist / (_scanRadius max 1)) min 0.90);
                                 private _jElevDiff = abs (_jAngle3D - (abs _jRelAz));
                                 private _jPitchFactor = 1 - ((_jElevDiff / _scanAperture) min 0.75);
-                                private _jStrength = (20 + (_jDistFactor * 78)) * _jPitchFactor;
+                                private _jStrength = (20 + (_jDistFactor * 78)) * _jPitchFactor * _jLosFactor;
 
                                 // Populate every 0.5 MHz bin from -7.0 to +7.0 (29 contiguous bins) for a solid noise barrage
                                 for "_step" from -14 to 14 do {
