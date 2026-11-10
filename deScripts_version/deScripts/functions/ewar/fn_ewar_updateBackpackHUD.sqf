@@ -1,8 +1,9 @@
 #include "..\script_component.hpp";
 /*
  * Author: deScripts Team
- * Renders and updates the EWAR C-UAS Manpack RCU Mini-HUD widget on the local client.
- * Displays power status LED (Green/Red), vertical 4-segment battery icon, and header/footer.
+ * Renders and updates:
+ * 1. The Slim Vertical EWAR C-UAS Manpack RCU Mini-HUD widget in the lower-right corner.
+ * 2. The native physical LCD screen on the Spectrum Device (hgun_esd_01_F) via #EM_* missionNamespace variables.
  *
  * Arguments:
  * 0: Force transient popup duration in seconds (optional, default 0) <NUMBER>
@@ -31,9 +32,363 @@ private _showPersistent = profileNamespace getVariable [QGVAR(ewar_showHUD), tru
 private _inPopupWindow = diag_tickTime < (missionNamespace getVariable [QGVAR(ewar_hudPopupUntil), 0]);
 private _isLowBatteryAlert = _isActive && {EGVAR(Settings,ewar_backpackRequiresBattery)} && {_battery <= 10};
 
-private _shouldShow = EGVAR(Settings,ewar_enable) && {_hasBackpack} && {_showPersistent || {_inPopupWindow} || {_isLowBatteryAlert}};
+private _holdingESD = alive player && {((toLower (currentWeapon player)) find "hgun_esd_01" != -1)};
+private _isDirectional = _hasBackpack && {_holdingESD};
 
-if (!_shouldShow) exitWith {
+private _radius = round (EGVAR(Settings,ewar_backpackRadius));
+private _coreRatio = missionNamespace getVariable [QEGVAR(Settings,ewar_backpackCoreRatio), 0.375];
+private _beamMode = player getVariable [QGVAR(ewar_beamMode), 0];
+private _baseMult = missionNamespace getVariable [QEGVAR(Settings,ewar_directionalMultiplier), 3.0];
+private _baseCone = missionNamespace getVariable [QEGVAR(Settings,ewar_directionalConeAngle), 45];
+
+private _dirMult = switch (_beamMode) do {
+    case 1: { _baseMult * (5.0 / 3.0) };
+    case 2: { _baseMult * (7.5 / 3.0) };
+    default { _baseMult };
+};
+private _coneAngle = switch (_beamMode) do {
+    case 1: { _baseCone * (20 / 45) };
+    case 2: { _baseCone * (10 / 45) };
+    default { _baseCone };
+};
+private _effRadius = round (_radius * _dirMult);
+private _effCoreDist = round (_effRadius * (_coreRatio max 0 min 0.95));
+
+// Momentary Left-Click Trigger Pulse when Backpack is in STBY
+private _triggerHeld = _isDirectional && {isNull (findDisplay 49)} && {!visibleMap} && {isNull (findDisplay 312)} && {((inputAction "DefaultAction") > 0) || {((inputAction "Fire") > 0)}};
+private _canPulse = (!_isActive) && {_triggerHeld} && {!(EGVAR(Settings,ewar_backpackRequiresBattery)) || {_battery > 0}};
+private _wasPulsing = player getVariable [QGVAR(ewar_isPulsing), false];
+if (_canPulse isNotEqualTo _wasPulsing) then {
+    player setVariable [QGVAR(ewar_isPulsing), _canPulse, true];
+    if (_canPulse) then {
+        [player] call FUNC(ewar_removeJammer);
+        private _exemptFriendly = missionNamespace getVariable [QEGVAR(Settings,ewar_backpackExemptFriendly), true];
+        private _sideExempt = if (_exemptFriendly) then { side (group player) } else { sideUnknown };
+        private _jammerID = [player, _radius, _coreRatio, _sideExempt] call FUNC(ewar_addJammer);
+        player setVariable [QGVAR(ewar_jammerID), _jammerID, true];
+        playSoundUI ["cba_ui_empty", 0.4, 1.4];
+    } else {
+        if (!_isActive) then {
+            [player] call FUNC(ewar_removeJammer);
+        };
+    };
+};
+private _isTransmitting = _isActive || {_canPulse};
+
+private _targetInCone = false;
+private _targetInKill = false;
+private _passiveSignalDetected = false;
+private _lockedDist = 99999;
+private _burnProgress = missionNamespace getVariable [QGVAR(ewar_burnProgress), 0];
+if (isNil "_burnProgress" || {!(finite _burnProgress)} || {_burnProgress < 0}) then {
+    _burnProgress = 0;
+    GVAR(ewar_burnProgress) = 0;
+};
+
+// ============================================================================
+// 1. DRIVE PHYSICAL SPECTRUM DEVICE LCD SCREEN (#EM_* Engine Variables)
+// ============================================================================
+if (_holdingESD) then {
+    // Ensure 3D muzzle antenna matches current beam focus mode on initial draw
+    if !(player getVariable [QGVAR(ewar_isSwappingAntenna), false]) then {
+        private _expectedAntenna = switch (_beamMode) do {
+            case 1: { "muzzle_antenna_02_f" };
+            case 2: { "muzzle_antenna_03_f" };
+            default { "muzzle_antenna_01_f" };
+        };
+        private _curHandgunItems = (handgunItems player) apply { toLower _x };
+        if !(_expectedAntenna in _curHandgunItems) then {
+            {
+                if (((toLower _x) find "muzzle_antenna_") != -1) then {
+                    player removeHandgunItem _x;
+                };
+            } forEach (handgunItems player);
+            player addHandgunItem _expectedAntenna;
+        };
+    };
+
+    // Configure X-axis (2400 - 2500 MHz UAV Band, 2450 = Center Boresight) and Y-axis (0 - 100 dB)
+    missionNamespace setVariable ["#EM_FMin", 2400];
+    missionNamespace setVariable ["#EM_FMax", 2500];
+    missionNamespace setVariable ["#EM_SMin", 0];
+    missionNamespace setVariable ["#EM_SMax", 100];
+
+    // Map active beam focus angle (45 deg / 20 deg / 10 deg) to the center selection gate on the LCD screen
+    private _halfGateSpan = (_coneAngle / 90) * 50;
+    missionNamespace setVariable ["#EM_SelMin", 2450 - _halfGateSpan];
+    missionNamespace setVariable ["#EM_SelMax", 2450 + _halfGateSpan];
+
+    private _emPairs = [];
+    private _rawDir = player weaponDirection (currentWeapon player);
+    if (_rawDir isEqualTo [] || {_rawDir isEqualTo [0, 0, 0]}) then {
+        _rawDir = eyeDirection player;
+    };
+    if (_rawDir isEqualTo [] || {_rawDir isEqualTo [0, 0, 0]}) then {
+        _rawDir = [0, 1, 0];
+    };
+    private _aimDir = vectorNormalized _rawDir;
+    private _aimHeading = if ((_aimDir select 0) == 0 && {(_aimDir select 1) == 0}) then {
+        0
+    } else {
+        (_aimDir select 0) atan2 (_aimDir select 1)
+    };
+    private _playerEye = eyePos player;
+    private _halfAngle = _coneAngle * 0.5;
+    private _playerSide = side (group player);
+
+    private _dt = (diag_tickTime - (missionNamespace getVariable [QGVAR(ewar_lastBurnTick), diag_tickTime])) max 0.01 min 0.5;
+    GVAR(ewar_lastBurnTick) = diag_tickTime;
+
+    private _exemptFriendly = missionNamespace getVariable [QEGVAR(Settings,ewar_backpackExemptFriendly), true];
+    private _scanRadius = 1500;
+    private _nearbyUavs = _playerEye nearEntities [["Air", "Car", "Tank"], _scanRadius];
+    private _lockedUav = objNull;
+
+    // A. Scan Aerial & Ground Drones (Distinct RF Waveforms)
+    {
+        if (unitIsUAV _x && {alive _x}) then {
+            private _uavSide = if (count (crew _x) > 0) then { side (group ((crew _x) select 0)) } else { side _x };
+            private _origSide = _x getVariable [QGVAR(ewar_originalSide), _uavSide];
+            private _isValidTarget = (!_exemptFriendly || {_origSide != _playerSide}) && {_origSide != sideUnknown};
+            if (_isValidTarget) then {
+                private _vec = (getPosASL _x) vectorDiff _playerEye;
+                private _dist = vectorMagnitude _vec;
+                if (_dist <= _scanRadius && {_dist > 0.1}) then {
+                    private _uavDir = vectorNormalized _vec;
+                    private _dot = ((_aimDir vectorDotProduct _uavDir) max -1) min 1;
+                    if (!finite _dot) then { _dot = 0; };
+                    private _angle3D = acos _dot;
+
+                    private _uavHeading = if ((_vec select 0) == 0 && {(_vec select 1) == 0}) then {
+                        0
+                    } else {
+                        (_vec select 0) atan2 (_vec select 1)
+                    };
+                    private _relAz = _uavHeading - _aimHeading;
+                    if (_relAz > 180) then { _relAz = _relAz - 360; };
+                    if (_relAz < -180) then { _relAz = _relAz + 360; };
+
+                    // Plot any UAV within +/- 45 degrees horizontal bearing onto the LCD graph
+                    if (abs _relAz <= 45) then {
+                        _passiveSignalDetected = true;
+                        private _freq = (2450 + ((_relAz / 45) * 50)) max 2405 min 2495;
+                        private _distFactor = 1 - ((_dist / _scanRadius) min 0.92);
+                        private _elevDiff = abs (_angle3D - (abs _relAz));
+                        private _pitchFactor = 1 - ((_elevDiff / 45) min 0.80);
+                        private _strength = (12 + (_distFactor * 82)) * _pitchFactor;
+
+                        if (_isDirectional && {_isTransmitting} && {_dist <= _effRadius} && {_angle3D <= _halfAngle}) then {
+                            _targetInCone = true;
+                            if (_dist < _lockedDist) then {
+                                _lockedDist = _dist;
+                                _lockedUav = _x;
+                            };
+                        };
+
+                        if ((_x isKindOf "Car") || {_x isKindOf "Tank"}) then {
+                            // 1. Ground UGV: Connected 3-Step Ascending Staircase / Sawtooth (0.5 MHz contiguous bins)
+                            private _hop = (sin (diag_tickTime * 18)) * 4;
+                            private _ugvProfile = [
+                                [-3.5, 0.38], [-3.0, 0.42], [-2.5, 0.44],
+                                [-2.0, 0.66], [-1.5, 0.70], [-1.0, 0.72], [-0.5, 0.74],
+                                [0.0, 0.92],  [0.5, 0.96],  [1.0, 0.98],  [1.5, 1.00],
+                                [2.0, 0.65],  [2.5, 0.40]
+                            ];
+                            {
+                                _x params ["_off", "_mult"];
+                                private _ptAmp = (_strength * _mult) + (if (_off >= 0 && {_off <= 1.5}) then { _hop } else { 0 });
+                                _emPairs pushBack [(_freq + _off) max 2401 min 2499, _ptAmp max 6 min 99];
+                            } forEach _ugvProfile;
+                        } else {
+                            if (_x isKindOf "Plane") then {
+                                // 2. Fixed-Wing Recon UAV: Solid Flat-Top Mesa / Plateau (0.5 MHz contiguous bins)
+                                private _planeProfile = [
+                                    [-3.0, 0.55], [-2.5, 0.88],
+                                    [-2.0, 0.94], [-1.5, 0.95], [-1.0, 0.96], [-0.5, 0.96],
+                                    [0.0, 0.96],  [0.5, 0.96],  [1.0, 0.96],  [1.5, 0.95], [2.0, 0.94],
+                                    [2.5, 0.88],  [3.0, 0.55]
+                                ];
+                                {
+                                    _x params ["_off", "_mult"];
+                                    _emPairs pushBack [(_freq + _off) max 2401 min 2499, (_strength * _mult) max 6 min 99];
+                                } forEach _planeProfile;
+                            } else {
+                                // 3. Rotary Quadcopter / FPV: Connected Twin-Peak 'M' Wave (Control + Analog Video Carrier)
+                                private _jitter = (random 8) - 4;
+                                private _quadProfile = [
+                                    [-2.0, 0.55, 0], [-1.5, 0.92, 0], [-1.0, 0.78, 0],
+                                    [-0.5, 0.48, 0], [0.0, 0.38, 0],  [0.5, 0.48, 0],
+                                    [1.0, 0.80, 1],  [1.5, 0.98, 1],  [2.0, 0.55, 1]
+                                ];
+                                {
+                                    _x params ["_off", "_mult", "_useJitter"];
+                                    private _ptAmp = (_strength * _mult) + (if (_useJitter == 1) then { _jitter } else { 0 });
+                                    _emPairs pushBack [(_freq + _off) max 2401 min 2499, _ptAmp max 6 min 99];
+                                } forEach _quadProfile;
+                            };
+                        };
+                    };
+                };
+            };
+        };
+    } forEach _nearbyUavs;
+
+    // B. Scan & Triangulate Hostile Ground Jammers (Solid 14 MHz Wide Boiling Noise Wall)
+    if (!isNil QGVAR(ewar_jammers) && {GVAR(ewar_jammers) isNotEqualTo []}) then {
+        {
+            _x params ["_jId", "_jSource", "_jRadius", "_jCore", "_jExempt"];
+            private _isSelf = (_jSource isEqualType objNull) && {_jSource isEqualTo player};
+            if (!_isSelf) then {
+                private _isFriendlyJammer = if (_jExempt isEqualType []) then {
+                    _playerSide in _jExempt
+                } else {
+                    (_jExempt isEqualTo _playerSide) || {(_jSource isEqualType objNull) && {(side (group _jSource)) isEqualTo _playerSide} && {_exemptFriendly}}
+                };
+
+                if (!_isFriendlyJammer) then {
+                    private _jPosASL = if (_jSource isEqualType objNull) then {
+                        if (isNull _jSource || {!alive _jSource}) then { [0, 0, 0] } else { getPosASL _jSource }
+                    } else {
+                        ATLToASL _jSource
+                    };
+
+                    if (_jPosASL isNotEqualTo [0, 0, 0]) then {
+                        private _jVec = _jPosASL vectorDiff _playerEye;
+                        private _jDist = vectorMagnitude _jVec;
+                        if (_jDist <= _scanRadius && {_jDist > 0.1}) then {
+                            private _jDir = vectorNormalized _jVec;
+                            private _jDot = ((_aimDir vectorDotProduct _jDir) max -1) min 1;
+                            if (!finite _jDot) then { _jDot = 0; };
+                            private _jAngle3D = acos _jDot;
+
+                            private _jHeading = if ((_jVec select 0) == 0 && {(_jVec select 1) == 0}) then {
+                                0
+                            } else {
+                                (_jVec select 0) atan2 (_jVec select 1)
+                            };
+                            private _jRelAz = _jHeading - _aimHeading;
+                            if (_jRelAz > 180) then { _jRelAz = _jRelAz - 360; };
+                            if (_jRelAz < -180) then { _jRelAz = _jRelAz + 360; };
+
+                            if (abs _jRelAz <= 45) then {
+                                _passiveSignalDetected = true;
+                                private _jFreq = (2450 + ((_jRelAz / 45) * 50)) max 2408 min 2492;
+                                private _jDistFactor = 1 - ((_jDist / _scanRadius) min 0.90);
+                                private _jElevDiff = abs (_jAngle3D - (abs _jRelAz));
+                                private _jPitchFactor = 1 - ((_jElevDiff / 45) min 0.75);
+                                private _jStrength = (20 + (_jDistFactor * 78)) * _jPitchFactor;
+
+                                // Populate every 0.5 MHz bin from -7.0 to +7.0 (29 contiguous bins) for a solid noise barrage
+                                for "_step" from -14 to 14 do {
+                                    private _off = _step * 0.5;
+                                    private _edgeTaper = if (abs _step >= 12) then { 0.72 } else { 1.0 };
+                                    private _noiseAmp = _jStrength * _edgeTaper * (0.62 + (random 0.38));
+                                    _emPairs pushBack [(_jFreq + _off) max 2401 min 2499, _noiseAmp max 10 min 99];
+                                };
+                            };
+                        };
+                    };
+                };
+            };
+        } forEach GVAR(ewar_jammers);
+    };
+
+    // Sort [freq, amp] pairs left-to-right across the 2.40 - 2.50 GHz spectrum
+    _emPairs sort true;
+    private _emValues = [];
+    {
+        _emValues pushBack (_x select 0);
+        _emValues pushBack (_x select 1);
+    } forEach _emPairs;
+
+    // Active Electronic Warfare Burn-Through Dwell-Time Processing
+    if (_targetInCone && {_isDirectional} && {_isTransmitting} && {!isNull _lockedUav}) then {
+        private _prevTarget = missionNamespace getVariable [QGVAR(ewar_burnTarget), objNull];
+        if (!isNull _prevTarget && {_prevTarget != _lockedUav}) then {
+            _prevTarget setVariable [QGVAR(ewar_burnIntensity), 0, true];
+            _burnProgress = _burnProgress * 0.5;
+        };
+        GVAR(ewar_burnTarget) = _lockedUav;
+
+        // Scale lock dwell time: 5s close range up to 30s at max beam range
+        private _distRatio = ((_lockedDist / (_effRadius max 1)) max 0) min 1;
+        if (!finite _distRatio) then { _distRatio = 0; };
+        private _timeToKill = (5.0 + (25.0 * _distRatio)) max 1;
+        private _chargeRate = 1.0 / _timeToKill;
+        if (!finite _chargeRate) then { _chargeRate = 0.2; };
+
+        _burnProgress = ((_burnProgress + (_chargeRate * _dt)) max 0) min 1.0;
+        if (!finite _burnProgress) then { _burnProgress = 0; };
+        GVAR(ewar_burnProgress) = _burnProgress;
+        _lockedUav setVariable [QGVAR(ewar_burnIntensity), _burnProgress, true];
+
+        if (_burnProgress >= 1.0) then {
+            _targetInKill = true;
+            if !(_lockedUav getVariable [QGVAR(ewar_isFailsafeActive), false]) then {
+                [QGVAR(ewar_executeDroneFailsafe), [_lockedUav], _lockedUav] call CBA_fnc_targetEvent;
+            };
+        };
+    } else {
+        // Graceful lock decay when aim slips off target
+        if (_burnProgress > 0) then {
+            _burnProgress = ((_burnProgress - (0.15 * _dt)) max 0) min 1.0;
+            if (!finite _burnProgress) then { _burnProgress = 0; };
+            GVAR(ewar_burnProgress) = _burnProgress;
+            private _prevTarget = missionNamespace getVariable [QGVAR(ewar_burnTarget), objNull];
+            if (!isNull _prevTarget) then {
+                _prevTarget setVariable [QGVAR(ewar_burnIntensity), _burnProgress, true];
+                if (_burnProgress <= 0) then {
+                    GVAR(ewar_burnTarget) = objNull;
+                };
+            };
+        };
+    };
+
+    missionNamespace setVariable ["#EM_Values", _emValues];
+    missionNamespace setVariable ["#EM_Transmit", _isDirectional && {_isTransmitting}];
+    missionNamespace setVariable ["#EM_Progress", _burnProgress];
+
+    // Hide the native "2.40 GHz", "2.4 GHz", and "2.50 GHz" labels at the bottom of the KAISERKOM LCD screen
+    // Contact DLC stores the Spectrum Device weaponInfoType display via uiNamespace "bin_object"
+    private _esdDisp = ctrlParent (uiNamespace getVariable ["bin_object", controlNull]);
+    if (!isNull _esdDisp) then {
+        private _ctrlSpec = _esdDisp displayCtrl 1999;
+        if (!isNull _ctrlSpec) then {
+            private _freqCtrls = +(_ctrlSpec getVariable ["bin_graphLegendH", []]);
+            _freqCtrls pushBackUnique (_ctrlSpec getVariable ["bin_selectedText", controlNull]);
+            {
+                _freqCtrls pushBackUnique (_esdDisp displayCtrl _x);
+            } forEach [4001, 5600, 5601, 5650];
+
+            {
+                if (!isNull _x) then {
+                    _x ctrlSetText "";
+                    _x ctrlSetTextColor [0, 0, 0, 0];
+                    _x ctrlSetFade 1;
+                    _x ctrlShow false;
+                    _x ctrlCommit 0;
+                };
+            } forEach _freqCtrls;
+
+            // Unbind references on _ctrlSpec so BIN_fnc_showPlayerSpectrumAnalyzer cannot re-populate them
+            _ctrlSpec setVariable ["bin_graphLegendH", []];
+            _ctrlSpec setVariable ["bin_selectedText", controlNull];
+        };
+    };
+
+    if (_targetInCone && {diag_tickTime > (missionNamespace getVariable [QGVAR(ewar_lastLockSound), 0]) + (0.85 - (_burnProgress * 0.45))}) then {
+        private _tonePitch = if (_targetInKill) then { 2.2 } else { 1.2 + (_burnProgress * 0.8) };
+        playSoundUI ["cba_ui_empty", 0.45, _tonePitch];
+        GVAR(ewar_lastLockSound) = diag_tickTime;
+    };
+};
+
+// ============================================================================
+// 2. SLIM SINGLE-COLUMN RCU MINI-HUD (Lower-Right Corner)
+// ============================================================================
+private _shouldShowRCU = EGVAR(Settings,ewar_enable) && {_hasBackpack} && {_showPersistent || {_inPopupWindow} || {_isLowBatteryAlert}};
+
+if (!_shouldShowRCU) exitWith {
     if (!isNil QGVAR(ewar_backpackHUDCtrls)) then {
         {
             if (!isNull _x) then {
@@ -47,8 +402,8 @@ if (!_shouldShow) exitWith {
 private _display = findDisplay 46;
 if (isNull _display) exitWith {};
 
-// Create HUD controls if not yet initialized (14 controls total)
-if (isNil QGVAR(ewar_backpackHUDCtrls) || {count GVAR(ewar_backpackHUDCtrls) < 14} || {isNull (GVAR(ewar_backpackHUDCtrls) select 0)}) then {
+// 15 controls total (0..14)
+if (isNil QGVAR(ewar_backpackHUDCtrls) || {count GVAR(ewar_backpackHUDCtrls) != 15} || {isNull (GVAR(ewar_backpackHUDCtrls) select 0)}) then {
     if (!isNil QGVAR(ewar_backpackHUDCtrls)) then {
         {
             if (!isNull _x) then {
@@ -58,13 +413,13 @@ if (isNil QGVAR(ewar_backpackHUDCtrls) || {count GVAR(ewar_backpackHUDCtrls) < 1
     };
     GVAR(ewar_backpackHUDCtrls) = [];
 
-    private _panelW = safeZoneW * 0.092;
-    private _panelH = safeZoneH * 0.120;
+    private _panelW = safeZoneW * 0.062;
+    private _panelH = safeZoneH * 0.136;
     private _panelX = safeZoneX + safeZoneW - _panelW - (safeZoneW * 0.012);
     private _panelY = safeZoneY + safeZoneH - _panelH - (safeZoneH * 0.085);
 
-    private _hdrH = _panelH * 0.21;
-    private _ftrH = _panelH * 0.20;
+    private _hdrH = _panelH * 0.19;
+    private _ftrH = _panelH * 0.18;
     private _bodyY = _panelY + _hdrH;
     private _bodyH = _panelH - _hdrH - _ftrH;
 
@@ -82,11 +437,11 @@ if (isNil QGVAR(ewar_backpackHUDCtrls) || {count GVAR(ewar_backpackHUDCtrls) < 1
     _hdrBg ctrlCommit 0;
     GVAR(ewar_backpackHUDCtrls) pushBack _hdrBg;
 
-    // 2: Header text (vertically centered)
+    // 2: Header text
     private _hdrTxt = _display ctrlCreate ["RscStructuredText", -1];
     _hdrTxt ctrlSetPosition [_panelX, _panelY + (_hdrH * 0.08), _panelW, _hdrH * 0.92];
     _hdrTxt ctrlSetBackgroundColor [0, 0, 0, 0];
-    _hdrTxt ctrlSetStructuredText parseText "<t align='center' size='0.72' font='PuristaSemibold' color='#d8e0e8'>EWAR C-UAS</t>";
+    _hdrTxt ctrlSetStructuredText parseText "<t align='center' size='0.68' font='PuristaSemibold' color='#d8e0e8'>EWAR C-UAS</t>";
     _hdrTxt ctrlCommit 0;
     GVAR(ewar_backpackHUDCtrls) pushBack _hdrTxt;
 
@@ -97,82 +452,69 @@ if (isNil QGVAR(ewar_backpackHUDCtrls) || {count GVAR(ewar_backpackHUDCtrls) < 1
     _ftrBg ctrlCommit 0;
     GVAR(ewar_backpackHUDCtrls) pushBack _ftrBg;
 
-    // 4: Footer text (vertically centered)
+    // 4: Footer text
     private _ftrTxt = _display ctrlCreate ["RscStructuredText", -1];
     _ftrTxt ctrlSetPosition [_panelX, _panelY + _panelH - _ftrH + (_ftrH * 0.08), _panelW, _ftrH * 0.92];
     _ftrTxt ctrlSetBackgroundColor [0, 0, 0, 0];
     _ftrTxt ctrlCommit 0;
     GVAR(ewar_backpackHUDCtrls) pushBack _ftrTxt;
 
-    // 5 & 6: Power Status LED Indicator (Bezel + Glowing Core)
-    private _leftX = _panelX + (_panelW * 0.09);
-    private _ledW = safeZoneW * 0.0065;
-    private _ledH = safeZoneH * 0.0115;
-    private _ledY = _bodyY + (_bodyH * 0.24);
+    // 5 & 6: Top Status Row (LED + Mode Label centered above Battery)
+    private _ledW = safeZoneW * 0.0055;
+    private _ledH = safeZoneH * 0.0098;
+    private _ledX = _panelX + (_panelW * 0.18);
+    private _ledY = _bodyY + (_bodyH * 0.08);
 
     private _ledBezel = _display ctrlCreate ["RscText", -1];
-    _ledBezel ctrlSetPosition [_leftX, _ledY, _ledW, _ledH];
+    _ledBezel ctrlSetPosition [_ledX, _ledY, _ledW, _ledH];
     _ledBezel ctrlSetBackgroundColor [0.02, 0.02, 0.02, 0.95];
     _ledBezel ctrlCommit 0;
     GVAR(ewar_backpackHUDCtrls) pushBack _ledBezel;
 
-    private _ledPadW = safeZoneW * 0.0008;
-    private _ledPadH = safeZoneH * 0.0014;
+    private _ledPadW = safeZoneW * 0.0006;
+    private _ledPadH = safeZoneH * 0.0011;
     private _ledCore = _display ctrlCreate ["RscText", -1];
-    _ledCore ctrlSetPosition [_leftX + _ledPadW, _ledY + _ledPadH, _ledW - (_ledPadW * 2), _ledH - (_ledPadH * 2)];
+    _ledCore ctrlSetPosition [_ledX + _ledPadW, _ledY + _ledPadH, _ledW - (_ledPadW * 2), _ledH - (_ledPadH * 2)];
     _ledCore ctrlCommit 0;
     GVAR(ewar_backpackHUDCtrls) pushBack _ledCore;
 
-    // 7: Mode & Battery Text Column (Left side)
+    // 7: Mode Text (Beside LED)
     private _modeTxt = _display ctrlCreate ["RscStructuredText", -1];
     _modeTxt ctrlSetPosition [
-        _leftX + _ledW + (_panelW * 0.02),
-        _ledY - (_bodyH * 0.06),
-        _panelW * 0.45,
-        _bodyH * 0.36
+        _ledX + _ledW + (_panelW * 0.035),
+        _ledY - (_bodyH * 0.04),
+        _panelW * 0.70,
+        _bodyH * 0.22
     ];
     _modeTxt ctrlSetBackgroundColor [0, 0, 0, 0];
     _modeTxt ctrlCommit 0;
     GVAR(ewar_backpackHUDCtrls) pushBack _modeTxt;
 
-    // 8: Battery % Readout (Aligned cleanly under LED & Mode label)
-    private _battTxt = _display ctrlCreate ["RscStructuredText", -1];
-    _battTxt ctrlSetPosition [
-        _leftX - (_panelW * 0.03),
-        _bodyY + (_bodyH * 0.54),
-        _panelW * 0.54,
-        _bodyH * 0.36
-    ];
-    _battTxt ctrlSetBackgroundColor [0, 0, 0, 0];
-    _battTxt ctrlCommit 0;
-    GVAR(ewar_backpackHUDCtrls) pushBack _battTxt;
-
-    // 9..11: Vertical Battery Icon (Centered vertically inside body cavity)
-    private _battW = _panelW * 0.22;
-    private _battH = _bodyH * 0.68;
+    // 8..10: Vertical Battery Icon (Centered horizontally with clear separation from Status Row)
+    private _battW = _panelW * 0.46;
+    private _battH = _bodyH * 0.54;
     private _capW = _battW * 0.44;
-    private _capH = _bodyH * 0.065;
-    private _totalBattH = _battH + _capH;
+    private _capH = _bodyH * 0.055;
 
-    private _battX = _panelX + (_panelW * 0.67);
-    private _capTopY = _bodyY + ((_bodyH - _totalBattH) / 2);
+    private _battX = _panelX + ((_panelW - _battW) / 2);
+    private _capTopY = _bodyY + (_bodyH * 0.35);
     private _battY = _capTopY + _capH;
 
-    // 9: Top terminal cap
+    // 8: Top terminal cap
     private _battCap = _display ctrlCreate ["RscText", -1];
     _battCap ctrlSetPosition [_battX + ((_battW - _capW) / 2), _capTopY, _capW, _capH];
     _battCap ctrlSetBackgroundColor [0.85, 0.88, 0.90, 0.9];
     _battCap ctrlCommit 0;
     GVAR(ewar_backpackHUDCtrls) pushBack _battCap;
 
-    // 10: Outer battery casing
+    // 9: Outer battery casing
     private _battOuter = _display ctrlCreate ["RscText", -1];
     _battOuter ctrlSetPosition [_battX, _battY, _battW, _battH];
     _battOuter ctrlSetBackgroundColor [0.85, 0.88, 0.90, 0.9];
     _battOuter ctrlCommit 0;
     GVAR(ewar_backpackHUDCtrls) pushBack _battOuter;
 
-    // 11: Inner hollow cavity
+    // 10: Inner hollow cavity
     private _borderW = safeZoneW * 0.0012;
     private _borderH = safeZoneH * 0.002;
     private _innerX = _battX + _borderW;
@@ -186,7 +528,7 @@ if (isNil QGVAR(ewar_backpackHUDCtrls) || {count GVAR(ewar_backpackHUDCtrls) < 1
     _battInner ctrlCommit 0;
     GVAR(ewar_backpackHUDCtrls) pushBack _battInner;
 
-    // 12..15: 4 Stacked Horizontal Battery Bars (Index 12 = bottom 25%, Index 15 = top 100%)
+    // 11..14: 4 Stacked Horizontal Battery Bars
     private _padX = _innerW * 0.13;
     private _padY = _innerH * 0.09;
     private _gapY = _innerH * 0.06;
@@ -202,92 +544,58 @@ if (isNil QGVAR(ewar_backpackHUDCtrls) || {count GVAR(ewar_backpackHUDCtrls) < 1
     };
 };
 
-// Update dynamic values on the controls
 private _ftrTxt = GVAR(ewar_backpackHUDCtrls) select 4;
 private _ledCore = GVAR(ewar_backpackHUDCtrls) select 6;
 private _modeTxt = GVAR(ewar_backpackHUDCtrls) select 7;
-private _battTxt = GVAR(ewar_backpackHUDCtrls) select 8;
-
-private _radius = round (EGVAR(Settings,ewar_backpackRadius));
-private _isDirectional = ((toLower (currentWeapon player)) find "hgun_esd_01" != -1);
-private _dirMult = missionNamespace getVariable [QEGVAR(Settings,ewar_directionalMultiplier), 3.0];
-private _coneAngle = missionNamespace getVariable [QEGVAR(Settings,ewar_directionalConeAngle), 45];
-private _targetInCone = false;
 
 if (_isDirectional) then {
-    private _effRadius = round (_radius * _dirMult);
-    _ftrTxt ctrlSetStructuredText parseText format ["<t align='center' size='0.66' font='PuristaMedium' color='#68d4f8'>RF: %1m DIR %2°</t>", _effRadius, round _coneAngle];
-
-    if (_isActive) then {
-        // Check if an enemy/unexempt drone is within the 3D cone
-        private _aimDir = vectorNormalized (player weaponDirection (currentWeapon player));
-        if (_aimDir isEqualTo [0, 0, 0]) then {
-            _aimDir = vectorNormalized (eyeDirection player);
-        };
-        private _playerEye = eyePos player;
-        private _halfAngle = _coneAngle * 0.5;
-        private _playerSide = side (group player);
-
-        private _nearbyUavs = _playerEye nearEntities [["Air", "Car"], _effRadius];
-        {
-            if (unitIsUAV _x && {alive _x}) then {
-                private _uavSide = if (!isNull (driver _x)) then { side (group (driver _x)) } else { sideUnknown };
-                if (_uavSide != _playerSide && {_uavSide != civilian}) then {
-                    private _vec = (getPosASL _x) vectorDiff _playerEye;
-                    private _dist = vectorMagnitude _vec;
-                    if (_dist <= _effRadius) then {
-                        private _dot = (_aimDir vectorDotProduct (vectorNormalized _vec)) max -1 min 1;
-                        if ((acos _dot) <= _halfAngle) exitWith {
-                            _targetInCone = true;
-                        };
-                    };
-                };
-            };
-        } forEach _nearbyUavs;
-
+    if (_isTransmitting) then {
         if (_targetInCone) then {
-            _ledCore ctrlSetBackgroundColor [0.95, 0.85, 0.15, 1.0];
-            _modeTxt ctrlSetStructuredText parseText "<t align='left' size='0.72' font='PuristaBold' color='#ffe044'>TX LOCK</t>";
-
-            if (cameraView == "GUNNER" && {diag_tickTime > (missionNamespace getVariable [QGVAR(ewar_lastLockSound), 0]) + 0.9}) then {
-                playSoundUI ["cba_ui_empty", 0.45, 1.7];
-                GVAR(ewar_lastLockSound) = diag_tickTime;
+            if (_targetInKill) then {
+                _ledCore ctrlSetBackgroundColor [1.0, 0.20, 0.20, 1.0];
+                _modeTxt ctrlSetStructuredText parseText "<t align='left' size='0.74' font='PuristaBold' color='#ff4444'>KILL</t>";
+                _ftrTxt ctrlSetStructuredText parseText "<t align='center' size='0.60' font='PuristaMedium' color='#ff4444'>LINK SEVERED</t>";
+            } else {
+                _ledCore ctrlSetBackgroundColor [0.95, 0.85, 0.15, 1.0];
+                _modeTxt ctrlSetStructuredText parseText "<t align='left' size='0.74' font='PuristaBold' color='#ffe044'>LOCK</t>";
+                private _lockPct = if (finite _burnProgress) then { round (_burnProgress * 100) } else { 0 };
+                _ftrTxt ctrlSetStructuredText parseText format ["<t align='center' size='0.54' font='PuristaMedium' color='#ffe044'>LOCK: %1%% [%2m]</t>", _lockPct, _effRadius];
             };
         } else {
-            _ledCore ctrlSetBackgroundColor [0.15, 0.95, 0.25, 1.0];
-            _modeTxt ctrlSetStructuredText parseText "<t align='left' size='0.74' font='PuristaBold' color='#88e0ff'>TX DIR</t>";
+            if (_canPulse) then {
+                _ledCore ctrlSetBackgroundColor [0.20, 0.85, 1.0, 1.0];
+                _modeTxt ctrlSetStructuredText parseText "<t align='left' size='0.74' font='PuristaBold' color='#68d4f8'>PULSE</t>";
+                _ftrTxt ctrlSetStructuredText parseText format ["<t align='center' size='0.56' font='PuristaMedium' color='#68d4f8'>PULSE: %1m DIR %2°</t>", _effRadius, round _coneAngle];
+            } else {
+                _ledCore ctrlSetBackgroundColor [0.15, 0.95, 0.25, 1.0];
+                _modeTxt ctrlSetStructuredText parseText "<t align='left' size='0.74' font='PuristaBold' color='#88e0ff'>TX DIR</t>";
+                _ftrTxt ctrlSetStructuredText parseText format ["<t align='center' size='0.60' font='PuristaMedium' color='#68d4f8'>RF: %1m DIR %2°</t>", _effRadius, round _coneAngle];
+            };
         };
     } else {
-        _ledCore ctrlSetBackgroundColor [0.95, 0.15, 0.15, 1.0];
-        _modeTxt ctrlSetStructuredText parseText "<t align='left' size='0.74' font='PuristaBold' color='#d8b8b8'>STBY DIR</t>";
+        if (_passiveSignalDetected) then {
+            _ledCore ctrlSetBackgroundColor [0.25, 0.70, 0.95, 1.0];
+            _modeTxt ctrlSetStructuredText parseText "<t align='left' size='0.74' font='PuristaBold' color='#68d4f8'>SCAN</t>";
+            _ftrTxt ctrlSetStructuredText parseText format ["<t align='center' size='0.56' font='PuristaMedium' color='#68d4f8'>SCAN: 1500m [%1°]</t>", round _coneAngle];
+        } else {
+            _ledCore ctrlSetBackgroundColor [0.95, 0.15, 0.15, 1.0];
+            _modeTxt ctrlSetStructuredText parseText "<t align='left' size='0.74' font='PuristaBold' color='#d8b8b8'>STBY</t>";
+            _ftrTxt ctrlSetStructuredText parseText format ["<t align='center' size='0.60' font='PuristaMedium' color='#98a6b4'>RF: %1m DIR %2°</t>", _effRadius, round _coneAngle];
+        };
     };
 } else {
-    _ftrTxt ctrlSetStructuredText parseText format ["<t align='center' size='0.66' font='PuristaMedium' color='#98a6b4'>RF: %1m OMNI</t>", _radius];
+    _ftrTxt ctrlSetStructuredText parseText format ["<t align='center' size='0.62' font='PuristaMedium' color='#98a6b4'>RF: %1m OMNI</t>", _radius];
 
     if (_isActive) then {
         _ledCore ctrlSetBackgroundColor [0.15, 0.95, 0.25, 1.0];
-        _modeTxt ctrlSetStructuredText parseText "<t align='left' size='0.76' font='PuristaBold' color='#e0f4e0'>TX ON</t>";
+        _modeTxt ctrlSetStructuredText parseText "<t align='left' size='0.74' font='PuristaBold' color='#e0f4e0'>TX ON</t>";
     } else {
         _ledCore ctrlSetBackgroundColor [0.95, 0.15, 0.15, 1.0];
-        _modeTxt ctrlSetStructuredText parseText "<t align='left' size='0.76' font='PuristaBold' color='#d8b8b8'>STBY</t>";
+        _modeTxt ctrlSetStructuredText parseText "<t align='left' size='0.74' font='PuristaBold' color='#d8b8b8'>STBY</t>";
     };
 };
 
-private _pctText = if (EGVAR(Settings,ewar_backpackRequiresBattery)) then {
-    format ["%1%%", round _battery]
-} else {
-    "INF"
-};
-
-private _drainTag = if (_isDirectional && {_isActive} && {EGVAR(Settings,ewar_backpackRequiresBattery)}) then {
-    " <t size='0.62' font='PuristaMedium' color='#68d4f8'>1.5X</t>"
-} else {
-    ""
-};
-
-_battTxt ctrlSetStructuredText parseText format ["<t align='left' size='0.68' font='PuristaSemibold' color='#b8c4d0'>BAT: %1%2</t>", _pctText, _drainTag];
-
-// Calculate active battery segments (0 to 4) and color matching reference image
+// Semiotic 4-Stage Battery Bar Colors
 private _effBattery = if (EGVAR(Settings,ewar_backpackRequiresBattery)) then { _battery } else { 100 };
 private _activeSegs = switch (true) do {
     case (_effBattery > 75): { 4 };
@@ -298,25 +606,24 @@ private _activeSegs = switch (true) do {
 };
 
 private _segColor = switch (_activeSegs) do {
-    case 4: { [0.48, 0.80, 0.38, 0.95] }; // 100%: Green
-    case 3: { [0.98, 0.90, 0.22, 0.95] }; // 75%: Yellow
-    case 2: { [0.98, 0.64, 0.20, 0.95] }; // 50%: Orange
-    case 1: { [0.94, 0.36, 0.36, 0.95] }; // 25%: Red
+    case 4: { [0.48, 0.80, 0.38, 0.95] }; // 76-100%: Solid Green
+    case 3: { [0.98, 0.90, 0.22, 0.95] }; // 51-75%: Solid Yellow
+    case 2: { [0.98, 0.64, 0.20, 0.95] }; // 26-50%: Solid Orange
+    case 1: { [0.94, 0.36, 0.36, 0.95] }; // 1-25%: Solid Red
     default { [0.94, 0.36, 0.36, 0.95] };
 };
 
 private _emptySegColor = [0.20, 0.22, 0.25, 0.45];
 
-// Flash bottom segment if battery <= 10%
 private _flashBottom = _effBattery <= 10 && {_effBattery > 0};
-private _flashOn = true;
-if (_flashBottom) then {
-    GVAR(ewar_battFlashState) = !(missionNamespace getVariable [QGVAR(ewar_battFlashState), false]);
-    _flashOn = GVAR(ewar_battFlashState);
+private _flashOn = if (_flashBottom) then {
+    ((floor (diag_tickTime * 2)) mod 2) == 0
+} else {
+    true
 };
 
 for "_i" from 0 to 3 do {
-    private _segCtrl = GVAR(ewar_backpackHUDCtrls) select (12 + _i);
+    private _segCtrl = GVAR(ewar_backpackHUDCtrls) select (11 + _i);
     if (_i < _activeSegs) then {
         if (_i == 0 && {_flashBottom} && {!_flashOn}) then {
             _segCtrl ctrlSetBackgroundColor [0.45, 0.15, 0.15, 0.25];

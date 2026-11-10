@@ -176,6 +176,17 @@ private _deScriptSettings = "deScripts Mission Settings";
 ] call CBA_fnc_addSetting;
 
 [
+    QEGVAR(Settings,ewar_backpackExemptFriendly),
+    "CHECKBOX",
+    ["Backpack Exempts Friendly Drones", "If enabled, player backpack jammers and Spectrum Devices only target other factions."],
+    [_deScriptSettings, "9; Electronic Warfare"],
+    true,
+    true,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
     QEGVAR(Settings,ewar_backpackRequiresBattery),
     "CHECKBOX",
     ["Backpack Requires Batteries", "Requires UAV batteries (GX or ACE) to power player backpack jammers."],
@@ -189,9 +200,9 @@ private _deScriptSettings = "deScripts Mission Settings";
 [
     QEGVAR(Settings,ewar_backpackBatteryLife),
     "SLIDER",
-    ["Battery Runtime (Minutes)", "Duration a single UAV battery will power the backpack jammer."],
+    ["Battery Runtime (Minutes)", "Duration a single UAV battery will power the backpack jammer in Omni mode."],
     [_deScriptSettings, "9; Electronic Warfare"],
-    [1, 60, 30, 0],
+    [1, 120, 45, 0],
     true,
     {},
     true
@@ -222,9 +233,9 @@ private _deScriptSettings = "deScripts Mission Settings";
 [
     QEGVAR(Settings,ewar_directionalPowerDrain),
     "SLIDER",
-    ["Directional Battery Drain Multiplier", "Battery drain rate multiplier when operating in directional mode."],
+    ["Directional Battery Drain Multiplier", "Base battery drain rate multiplier when operating in directional mode."],
     [_deScriptSettings, "9; Electronic Warfare"],
-    [1.0, 3.0, 1.5, 1],
+    [1.0, 10.0, 3.0, 1],
     true,
     {},
     true

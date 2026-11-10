@@ -191,6 +191,7 @@ class deScripts {
         class ewar_toggleBackpackJammer {};
         class ewar_reloadBackpackBattery {};
         class ewar_updateBackpackHUD {};
+        class ewar_cycleBeamFocus {};
     };
     class testing {
         file = "deScripts\functions\testing";

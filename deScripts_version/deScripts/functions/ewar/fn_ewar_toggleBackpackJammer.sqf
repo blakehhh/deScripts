@@ -42,7 +42,8 @@ if (_newState) then {
 
     private _radius = round (EGVAR(Settings,ewar_backpackRadius));
     private _coreRatio = missionNamespace getVariable [QEGVAR(Settings,ewar_backpackCoreRatio), 0.375];
-    private _sideExempt = side (group _unit);
+    private _exemptFriendly = missionNamespace getVariable [QEGVAR(Settings,ewar_backpackExemptFriendly), true];
+    private _sideExempt = if (_exemptFriendly) then { side (group _unit) } else { sideUnknown };
     private _jammerID = [_unit, _radius, _coreRatio, _sideExempt] call FUNC(ewar_addJammer);
 
     _unit setVariable [QGVAR(ewar_isJammerActive), true, true];
@@ -53,6 +54,13 @@ if (_newState) then {
 } else {
     [_unit] call FUNC(ewar_removeJammer);
     _unit setVariable [QGVAR(ewar_isJammerActive), false, true];
+
+    GVAR(ewar_burnProgress) = 0;
+    private _prevTarget = missionNamespace getVariable [QGVAR(ewar_burnTarget), objNull];
+    if (!isNull _prevTarget) then {
+        _prevTarget setVariable [QGVAR(ewar_burnIntensity), 0, true];
+    };
+    GVAR(ewar_burnTarget) = objNull;
 
     playSoundUI ["cba_ui_empty", 0.5, 0.8];
     [5] call FUNC(ewar_updateBackpackHUD);

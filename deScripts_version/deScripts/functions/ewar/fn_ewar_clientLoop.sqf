@@ -25,14 +25,24 @@ if !(EGVAR(Settings,ewar_enable)) exitWith {
 };
 
 // 1. Handle local player's EWAR Backpack Jammer (battery drain, unequip safeguard, and RCU HUD)
-if (player getVariable [QGVAR(ewar_isJammerActive), false]) then {
+private _isPackActive = player getVariable [QGVAR(ewar_isJammerActive), false];
+private _isPulsing = player getVariable [QGVAR(ewar_isPulsing), false];
+if (_isPackActive || {_isPulsing}) then {
     if (!alive player || {(toLower (backpack player)) find "b_radiobag_01" == -1}) then {
+        player setVariable [QGVAR(ewar_isPulsing), false, true];
         [player, false] call FUNC(ewar_toggleBackpackJammer);
     } else {
         if (EGVAR(Settings,ewar_backpackRequiresBattery)) then {
-            private _isDirectional = ((toLower (currentWeapon player)) find "hgun_esd_01" != -1);
+            private _isDirectional = ((toLower (currentWeapon player)) find "hgun_esd_01" != -1) || {_isPulsing};
+            private _beamMode = player getVariable [QGVAR(ewar_beamMode), 0];
             private _powerDrainMult = if (_isDirectional) then {
-                missionNamespace getVariable [QEGVAR(Settings,ewar_directionalPowerDrain), 1.5]
+                private _baseDrain = missionNamespace getVariable [QEGVAR(Settings,ewar_directionalPowerDrain), 3.0];
+                private _drainMult = _baseDrain + (_beamMode * 1.0); // 3x (Wide), 4x (Focused), 5x (Spot)
+                private _burnProgress = missionNamespace getVariable [QGVAR(ewar_burnProgress), 0];
+                if (!isNil "_burnProgress" && {finite _burnProgress} && {_burnProgress > 0}) then {
+                    _drainMult = _drainMult * 2.0; // Burn-through actively surges power draw by an extra 2x
+                };
+                _drainMult
             } else {
                 1.0
             };
@@ -44,6 +54,7 @@ if (player getVariable [QGVAR(ewar_isJammerActive), false]) then {
             player setVariable [QGVAR(ewar_backpackBattery), _battery, true];
 
             if (_battery <= 0) then {
+                player setVariable [QGVAR(ewar_isPulsing), false, true];
                 [player, false] call FUNC(ewar_toggleBackpackJammer);
             };
         };
@@ -81,9 +92,21 @@ if (!isNil QGVAR(ewar_jammers) && {GVAR(ewar_jammers) isNotEqualTo []}) then {
             private _isDirMan = _isMan && {alive _source} && {((toLower (currentWeapon _source)) find "hgun_esd_01" != -1)};
 
             if (_isDirMan) then {
-                // Directional 3D 45-degree cone mode (Option A: Pure Directional)
-                private _dirMult = missionNamespace getVariable [QEGVAR(Settings,ewar_directionalMultiplier), 3.0];
-                private _coneAngle = missionNamespace getVariable [QEGVAR(Settings,ewar_directionalConeAngle), 45];
+                // Directional 3D cone mode (Option A: Pure Directional with variable beam focus)
+                private _beamMode = _source getVariable [QGVAR(ewar_beamMode), 0];
+                private _baseMult = missionNamespace getVariable [QEGVAR(Settings,ewar_directionalMultiplier), 3.0];
+                private _baseCone = missionNamespace getVariable [QEGVAR(Settings,ewar_directionalConeAngle), 45];
+
+                private _dirMult = switch (_beamMode) do {
+                    case 1: { _baseMult * (5.0 / 3.0) };
+                    case 2: { _baseMult * (7.5 / 3.0) };
+                    default { _baseMult };
+                };
+                private _coneAngle = switch (_beamMode) do {
+                    case 1: { _baseCone * (20 / 45) };
+                    case 2: { _baseCone * (10 / 45) };
+                    default { _baseCone };
+                };
                 private _halfAngle = _coneAngle * 0.5;
 
                 private _effRadius = _radius * _dirMult;
@@ -95,21 +118,26 @@ if (!isNil QGVAR(ewar_jammers) && {GVAR(ewar_jammers) isNotEqualTo []}) then {
                 private _dist = vectorMagnitude _vecToUav;
 
                 if (_dist <= _effRadius) then {
-                    private _aimDir = vectorNormalized (_source weaponDirection (currentWeapon _source));
-                    if (_aimDir isEqualTo [0, 0, 0]) then {
-                        _aimDir = vectorNormalized (eyeDirection _source);
+                    private _rawDir = _source weaponDirection (currentWeapon _source);
+                    if (_rawDir isEqualTo [] || {_rawDir isEqualTo [0, 0, 0]}) then {
+                        _rawDir = eyeDirection _source;
                     };
+                    if (_rawDir isEqualTo [] || {_rawDir isEqualTo [0, 0, 0]}) then {
+                        _rawDir = [0, 1, 0];
+                    };
+                    private _aimDir = vectorNormalized _rawDir;
 
                     private _uavDir = vectorNormalized _vecToUav;
-                    private _dot = (_aimDir vectorDotProduct _uavDir) max -1 min 1;
+                    private _dot = ((_aimDir vectorDotProduct _uavDir) max -1) min 1;
+                    if (!finite _dot) then { _dot = 0; };
                     private _angleDeg = acos _dot;
 
                     if (_angleDeg <= _halfAngle) then {
-                        private _intensity = if (_effCoreRatio > 0 && {_dist <= _coreDist}) then {
-                            1.0
-                        } else {
-                            0.84 * (1 - ((_dist - _coreDist) / ((_effRadius - _coreDist) max 1)))
-                        };
+                        private _burnLevel = (_uav getVariable [QGVAR(ewar_burnIntensity), 0]) max 0 min 1;
+                        if (!finite _burnLevel) then { _burnLevel = 0; };
+                        private _baseIntensity = 0.25 + (0.55 * (1 - (_dist / (_effRadius max 1))));
+                        private _intensity = (_baseIntensity + ((1.0 - _baseIntensity) * (_burnLevel ^ 1.2))) min 1.0;
+                        if (!finite _intensity) then { _intensity = _baseIntensity; };
                         if (_intensity > _maxIntensity) then {
                             _maxIntensity = _intensity;
                         };
