@@ -138,6 +138,6 @@ if (cameraOn isEqualTo _uav) then {
 
 // 3. Audio static clicks/pops when viewing UAV feed
 if (cameraOn isEqualTo _uav && {_intensity > 0.25} && {diag_tickTime > (GVAR(ewar_nextStaticSound) select 0)}) then {
-    playSoundUI ["cba_ui_empty", 0.35 * _intensity, 1];
+    playSoundUI ["\A3\sounds_f\sfx\UI\volume_preview\radio.wss", 0.35 * _intensity, 1];
     GVAR(ewar_nextStaticSound) = [diag_tickTime + random [0.5, 1.5, 3]];
 };

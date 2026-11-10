@@ -25,7 +25,7 @@ private _hasGX = "GX_UAVBattery" in _unitItems;
 private _hasACE = "ACE_UAVBattery" in _unitItems;
 
 if (!_hasGX && {!_hasACE}) exitWith {
-    playSoundUI ["cba_ui_empty", 0.5, 0.6];
+    playSoundUI ["ACE_Sound_Click", 0.6, 0.6];
     [5] call FUNC(ewar_updateBackpackHUD);
 };
 
@@ -47,7 +47,7 @@ if (!_hasGX && {!_hasACE}) exitWith {
             };
         };
 
-        playSoundUI ["cba_ui_empty", 0.5, 1.1];
+        playSoundUI ["ACE_Sound_Click", 0.6, 1.0];
         [5] call FUNC(ewar_updateBackpackHUD);
     },
     {},

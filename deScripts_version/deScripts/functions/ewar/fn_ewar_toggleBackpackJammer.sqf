@@ -33,7 +33,7 @@ if (_newState) then {
 
     private _battery = _unit getVariable [QGVAR(ewar_backpackBattery), 100];
     if (EGVAR(Settings,ewar_backpackRequiresBattery) && {_battery <= 0}) exitWith {
-        playSoundUI ["cba_ui_empty", 0.5, 0.6];
+        playSoundUI ["ACE_Sound_Click", 0.6, 0.6];
         [5] call FUNC(ewar_updateBackpackHUD);
     };
 
@@ -49,7 +49,7 @@ if (_newState) then {
     _unit setVariable [QGVAR(ewar_isJammerActive), true, true];
     _unit setVariable [QGVAR(ewar_jammerID), _jammerID, true];
 
-    playSoundUI ["cba_ui_empty", 0.5, 1.2];
+    playSoundUI ["ACE_Sound_Click", 0.6, 1.2];
     [5] call FUNC(ewar_updateBackpackHUD);
 } else {
     [_unit] call FUNC(ewar_removeJammer);
@@ -62,6 +62,6 @@ if (_newState) then {
     };
     GVAR(ewar_burnTarget) = objNull;
 
-    playSoundUI ["cba_ui_empty", 0.5, 0.8];
+    playSoundUI ["ACE_Sound_Click", 0.6, 0.8];
     [5] call FUNC(ewar_updateBackpackHUD);
 };

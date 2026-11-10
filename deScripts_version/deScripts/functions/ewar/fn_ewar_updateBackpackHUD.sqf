@@ -66,7 +66,7 @@ if (_canPulse isNotEqualTo _wasPulsing) then {
         private _sideExempt = if (_exemptFriendly) then { side (group player) } else { sideUnknown };
         private _jammerID = [player, _radius, _coreRatio, _sideExempt] call FUNC(ewar_addJammer);
         player setVariable [QGVAR(ewar_jammerID), _jammerID, true];
-        playSoundUI ["cba_ui_empty", 0.4, 1.4];
+        playSoundUI ["ACE_Sound_Click", 0.6, 1.4];
     } else {
         if (!_isActive) then {
             [player] call FUNC(ewar_removeJammer);
@@ -79,6 +79,7 @@ private _targetInCone = false;
 private _targetInKill = false;
 private _passiveSignalDetected = false;
 private _lockedDist = 99999;
+private _scanRadius = _effRadius;
 private _burnProgress = missionNamespace getVariable [QGVAR(ewar_burnProgress), 0];
 if (isNil "_burnProgress" || {!(finite _burnProgress)} || {_burnProgress < 0}) then {
     _burnProgress = 0;
@@ -141,7 +142,7 @@ if (_holdingESD) then {
 
     private _exemptFriendly = missionNamespace getVariable [QEGVAR(Settings,ewar_backpackExemptFriendly), true];
     // Antenna scan aperture and detection range scale with physical antenna attachment
-    private _scanRadius = _effRadius;
+    _scanRadius = _effRadius;
     private _scanAperture = switch (_beamMode) do {
         case 1: { 30 };
         case 2: { 15 };
@@ -354,6 +355,9 @@ if (_holdingESD) then {
     missionNamespace setVariable ["#EM_Transmit", _isDirectional && {_isTransmitting}];
     missionNamespace setVariable ["#EM_Progress", _burnProgress];
 
+    // Clear Muzzle_1 ammo so the hip-fire 3D model screen clears "999.9 MHz"
+    player setAmmo ["Muzzle_1", 0];
+
     // Hide the native "2.40 GHz", "2.4 GHz", and "2.50 GHz" labels at the bottom of the KAISERKOM LCD screen
     // Contact DLC stores the Spectrum Device weaponInfoType display via uiNamespace "bin_object"
     private _esdDisp = ctrlParent (uiNamespace getVariable ["bin_object", controlNull]);
@@ -384,7 +388,7 @@ if (_holdingESD) then {
 
     if (_targetInCone && {diag_tickTime > (missionNamespace getVariable [QGVAR(ewar_lastLockSound), 0]) + (0.85 - (_burnProgress * 0.45))}) then {
         private _tonePitch = if (_targetInKill) then { 2.2 } else { 1.2 + (_burnProgress * 0.8) };
-        playSoundUI ["cba_ui_empty", 0.45, _tonePitch];
+        playSoundUI ["\A3\Sounds_F\sfx\hint-2.wss", 0.5, _tonePitch];
         GVAR(ewar_lastLockSound) = diag_tickTime;
     };
 };
@@ -496,11 +500,11 @@ if (isNil QGVAR(ewar_backpackHUDCtrls) || {count GVAR(ewar_backpackHUDCtrls) != 
     _modeTxt ctrlCommit 0;
     GVAR(ewar_backpackHUDCtrls) pushBack _modeTxt;
 
-    // 8..10: Vertical Battery Icon (Centered horizontally with clear separation from Status Row)
-    private _battW = _panelW * 0.46;
+    // 8..10: Vertical Battery Icon (Slim, balanced aspect ratio centered horizontally)
+    private _battW = _panelW * 0.32;
     private _battH = _bodyH * 0.54;
-    private _capW = _battW * 0.44;
-    private _capH = _bodyH * 0.055;
+    private _capW = _battW * 0.45;
+    private _capH = _bodyH * 0.05;
 
     private _battX = _panelX + ((_panelW - _battW) / 2);
     private _capTopY = _bodyY + (_bodyH * 0.35);

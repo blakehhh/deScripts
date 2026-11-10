@@ -40,7 +40,7 @@ private _newMode = if (_isExact) then {
 };
 
 if (_newMode == _curMode) exitWith {
-    playSoundUI ["cba_ui_empty", 0.35, 1.0];
+    playSoundUI ["ACE_Sound_Click", 0.5, 1.0];
     [5] call FUNC(ewar_updateBackpackHUD);
     _curMode
 };
@@ -77,15 +77,13 @@ private _fnc_applySwap = {
         _targetUnit addHandgunItem _muzzleClass;
     };
 
-    private _pitch = 1.35 + (_modeIndex * 0.25);
-    playSoundUI ["cba_ui_empty", 0.5, _pitch];
     [5] call FUNC(ewar_updateBackpackHUD);
 };
 
 if (EGVAR(patches,usesACE)) then {
     _unit setVariable [QGVAR(ewar_isSwappingAntenna), true];
     _unit playAction "GestureReloadPistol";
-    playSoundUI ["cba_ui_empty", 0.4, 0.85];
+    playSoundUI ["ACE_Sound_Click", 0.6, 0.85];
 
     [
         2.0,
@@ -99,7 +97,7 @@ if (EGVAR(patches,usesACE)) then {
             params ["_args"];
             _args params ["_u"];
             _u setVariable [QGVAR(ewar_isSwappingAntenna), false];
-            playSoundUI ["cba_ui_empty", 0.4, 0.6];
+            playSoundUI ["ACE_Sound_Click", 0.5, 0.6];
         },
         _barTitle,
         {
