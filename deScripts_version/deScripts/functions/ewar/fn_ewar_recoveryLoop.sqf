@@ -1,7 +1,7 @@
 #include "..\script_component.hpp";
 /*
  * Author: deScripts Team
- * Periodic monitor (runs on server and clients) that:
+ * Periodic monitor (runs exclusively on the server) that:
  * 1. Evaluates all active UAVs (including autonomous AI / Zeus drones) against active jammer
  *    crit zones (both Omni and Directional cones) and triggers fail-safe when inside.
  * 2. Checks whether previously jammed drones have exited all active jammer crit zones,
@@ -19,6 +19,7 @@
  * Public: No
  */
 
+if (!isServer) exitWith {};
 if !(EGVAR(Settings,ewar_enable)) exitWith {};
 
 // Helper to check if a UAV is currently inside any active jammer's hard kill zone
@@ -80,11 +81,15 @@ private _fnc_isUavInCritZone = {
 if (!isNil QGVAR(ewar_jammers) && {GVAR(ewar_jammers) isNotEqualTo []}) then {
     {
         private _uav = _x;
-        if (!isNull _uav && {alive _uav} && {local _uav} && {!(_uav getVariable [QGVAR(ewar_isFailsafeActive), false])}) then {
+        if (!isNull _uav && {alive _uav} && {!(_uav getVariable [QGVAR(ewar_isFailsafeActive), false])}) then {
             private _uavSide = if (count (crew _uav) > 0) then { side (group ((crew _uav) select 0)) } else { side _uav };
             if (_uavSide != civilian && {_uavSide != sideUnknown}) then {
                 if ([_uav, _uavSide] call _fnc_isUavInCritZone) then {
-                    [_uav] call FUNC(ewar_executeFailsafe);
+                    if (local _uav) then {
+                        [_uav] call FUNC(ewar_executeFailsafe);
+                    } else {
+                        [QGVAR(ewar_executeDroneFailsafe), [_uav], _uav] call CBA_fnc_targetEvent;
+                    };
                 };
             };
         };
@@ -97,12 +102,14 @@ if (isNil QGVAR(ewar_jammedDrones) || {GVAR(ewar_jammedDrones) isEqualTo []}) ex
 {
     private _uav = _x;
     if (isNull _uav || {!alive _uav}) then {
-        [QGVAR(ewar_unregisterJammedDrone), [_uav]] call CBA_fnc_globalEvent;
+        GVAR(ewar_jammedDrones) = GVAR(ewar_jammedDrones) select { !isNull _x && {_x isNotEqualTo _uav} };
     } else {
-        if (local _uav) then {
-            private _origSide = _uav getVariable [QGVAR(ewar_originalSide), sideUnknown];
-            if !([_uav, _origSide] call _fnc_isUavInCritZone) then {
+        private _origSide = _uav getVariable [QGVAR(ewar_originalSide), sideUnknown];
+        if !([_uav, _origSide] call _fnc_isUavInCritZone) then {
+            if (local _uav) then {
                 [_uav] call FUNC(ewar_restoreDroneSide);
+            } else {
+                [QGVAR(ewar_restoreDroneSide), [_uav], _uav] call CBA_fnc_targetEvent;
             };
         };
     };

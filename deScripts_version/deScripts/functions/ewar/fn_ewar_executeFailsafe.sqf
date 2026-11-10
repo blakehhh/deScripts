@@ -33,8 +33,8 @@ if (_crew isNotEqualTo []) then {
     _crew joinSilent _civGroup;
 };
 
-// Register in active jammed drones list for recovery monitoring
-[QGVAR(ewar_registerJammedDrone), [_uav]] call CBA_fnc_globalEvent;
+// Register in active jammed drones list for server recovery monitoring
+[QGVAR(ewar_registerJammedDrone), [_uav]] call CBA_fnc_serverEvent;
 
 // Check CBA setting mode (0: Realistic, 1: Engine Cut, 2: Terminal Disconnect Only)
 private _behavior = EGVAR(Settings,ewar_failsafeBehavior);

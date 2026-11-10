@@ -57,9 +57,18 @@ GVAR(ewar_nextStaticSound) = [0];
     [_uav] call FUNC(ewar_executeFailsafe);
 }] call CBA_fnc_addEventHandler;
 
-// Event handler for registering jammed drone
+// Target event handler to restore drone side where the drone is local
+[QGVAR(ewar_restoreDroneSide), {
+    params ["_uav"];
+    if (isNull _uav) exitWith {};
+    if (!local _uav) exitWith {};
+    [_uav] call FUNC(ewar_restoreDroneSide);
+}] call CBA_fnc_addEventHandler;
+
+// Event handler for registering jammed drone (Server authoritative)
 [QGVAR(ewar_registerJammedDrone), {
     params ["_uav"];
+    if (!isServer) exitWith {};
     if (isNull _uav) exitWith {};
     if (isNil QGVAR(ewar_jammedDrones)) then {
         GVAR(ewar_jammedDrones) = [];
@@ -67,9 +76,10 @@ GVAR(ewar_nextStaticSound) = [0];
     GVAR(ewar_jammedDrones) pushBackUnique _uav;
 }] call CBA_fnc_addEventHandler;
 
-// Event handler for unregistering jammed drone
+// Event handler for unregistering jammed drone (Server authoritative)
 [QGVAR(ewar_unregisterJammedDrone), {
     params ["_uav"];
+    if (!isServer) exitWith {};
     if (isNil QGVAR(ewar_jammedDrones)) exitWith {};
     GVAR(ewar_jammedDrones) = GVAR(ewar_jammedDrones) select { !isNull _x && {_x isNotEqualTo _uav} };
 }] call CBA_fnc_addEventHandler;

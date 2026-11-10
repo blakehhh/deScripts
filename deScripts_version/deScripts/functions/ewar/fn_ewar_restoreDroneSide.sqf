@@ -21,7 +21,7 @@ if (isNull _uav || {!local _uav}) exitWith {};
 
 private _origSide = _uav getVariable [QGVAR(ewar_originalSide), sideUnknown];
 if (_origSide == sideUnknown) exitWith {
-    [QGVAR(ewar_unregisterJammedDrone), [_uav]] call CBA_fnc_globalEvent;
+    [QGVAR(ewar_unregisterJammedDrone), [_uav]] call CBA_fnc_serverEvent;
 };
 
 private _crew = crew _uav;
@@ -44,4 +44,4 @@ if (_crew isNotEqualTo []) then {
 _uav setVariable [QGVAR(ewar_originalSide), nil, true];
 _uav setVariable [QGVAR(ewar_originalGroup), nil, true];
 
-[QGVAR(ewar_unregisterJammedDrone), [_uav]] call CBA_fnc_globalEvent;
+[QGVAR(ewar_unregisterJammedDrone), [_uav]] call CBA_fnc_serverEvent;

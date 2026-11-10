@@ -19,10 +19,12 @@
 
 if (is3DEN) exitWith {};
 
-// Start recovery & autonomous UAV crit-zone monitor on all machines (server & clients)
-[{
-    call FUNC(ewar_recoveryLoop);
-}, 1.0, []] call CBA_fnc_addPerFrameHandler;
+// Start recovery & autonomous UAV crit-zone monitor strictly on the Server
+if (isServer) then {
+    [{
+        call FUNC(ewar_recoveryLoop);
+    }, 1.0, []] call CBA_fnc_addPerFrameHandler;
+};
 
 // Start client-side operator loop and ACE self-interactions only if local player interface exists
 if (hasInterface) then {
