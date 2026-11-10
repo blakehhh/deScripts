@@ -140,8 +140,8 @@ if (!isNil QGVAR(ewar_jammers) && {GVAR(ewar_jammers) isNotEqualTo []}) then {
                             if (!finite _burnLevel) then { _burnLevel = 0; };
                             private _baseIntensity = 0.25 + (0.55 * (1 - (_dist / (_effRadius max 1))));
                             private _intensity = if (_objBlocked) then {
-                                // Grazing interference when obstructed by buildings/walls
-                                _baseIntensity * 0.35
+                                // Penetrating interference when obstructed by objects/foliage (scaled by burn level)
+                                ((_baseIntensity * 0.50) + ((0.85 - (_baseIntensity * 0.50)) * (_burnLevel ^ 1.2))) min 0.85
                             } else {
                                 (_baseIntensity + ((1.0 - _baseIntensity) * (_burnLevel ^ 1.2))) min 1.0
                             };

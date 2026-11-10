@@ -77,6 +77,7 @@ private _isTransmitting = _isActive || {_canPulse};
 
 private _targetInCone = false;
 private _targetInKill = false;
+private _lockedIsObstructed = false;
 private _passiveSignalDetected = false;
 private _lockedDist = 99999;
 private _scanRadius = _effRadius;
@@ -200,12 +201,14 @@ if (_holdingESD) then {
                         private _pitchFactor = 1 - ((_elevDiff / _scanAperture) min 0.80);
                         private _strength = (12 + (_distFactor * 82)) * _pitchFactor * _losFactor;
 
-                        // Active directional burn-through requires clear Line-of-Sight (not blocked by terrain or solid structures)
-                        if (!_terrainBlocked && {!_objBlocked} && {_isDirectional} && {_isTransmitting} && {_dist <= _effRadius} && {_angle3D <= _halfAngle}) then {
+                        // Active directional burn-through requires that terrain (hills/bedrock) does not block the path
+                        // Objects (trees, foliage, walls) allow burn-through at an increased dwell time
+                        if (!_terrainBlocked && {_isDirectional} && {_isTransmitting} && {_dist <= _effRadius} && {_angle3D <= _halfAngle}) then {
                             _targetInCone = true;
                             if (_dist < _lockedDist) then {
                                 _lockedDist = _dist;
                                 _lockedUav = _x;
+                                _lockedIsObstructed = _objBlocked;
                             };
                         };
 
@@ -356,6 +359,10 @@ if (_holdingESD) then {
         private _distRatio = ((_lockedDist / (_effRadius max 1)) max 0) min 1;
         if (!finite _distRatio) then { _distRatio = 0; };
         private _timeToKill = (5.0 + (25.0 * _distRatio)) max 1;
+        // Obstructed sightlines (trees, foliage, walls) increase dwell time by 2.2x (~11s close, ~66s max range)
+        if (_lockedIsObstructed) then {
+            _timeToKill = _timeToKill * 2.2;
+        };
         private _chargeRate = 1.0 / _timeToKill;
         if (!finite _chargeRate) then { _chargeRate = 0.2; };
 
@@ -601,10 +608,17 @@ if (_isDirectional) then {
                 _modeTxt ctrlSetStructuredText parseText "<t align='left' size='0.74' font='PuristaBold' color='#ff4444'>KILL</t>";
                 _ftrTxt ctrlSetStructuredText parseText "<t align='center' size='0.60' font='PuristaMedium' color='#ff4444'>LINK SEVERED</t>";
             } else {
-                _ledCore ctrlSetBackgroundColor [0.95, 0.85, 0.15, 1.0];
-                _modeTxt ctrlSetStructuredText parseText "<t align='left' size='0.74' font='PuristaBold' color='#ffe044'>LOCK</t>";
-                private _lockPct = if (finite _burnProgress) then { round (_burnProgress * 100) } else { 0 };
-                _ftrTxt ctrlSetStructuredText parseText format ["<t align='center' size='0.54' font='PuristaMedium' color='#ffe044'>LOCK: %1%% [%2m]</t>", _lockPct, _effRadius];
+                if (_lockedIsObstructed) then {
+                    _ledCore ctrlSetBackgroundColor [0.95, 0.60, 0.10, 1.0];
+                    _modeTxt ctrlSetStructuredText parseText "<t align='left' size='0.70' font='PuristaBold' color='#ffaa33'>LOCK [OBS]</t>";
+                    private _lockPct = if (finite _burnProgress) then { round (_burnProgress * 100) } else { 0 };
+                    _ftrTxt ctrlSetStructuredText parseText format ["<t align='center' size='0.54' font='PuristaMedium' color='#ffaa33'>OBS: %1%% [%2m]</t>", _lockPct, _effRadius];
+                } else {
+                    _ledCore ctrlSetBackgroundColor [0.95, 0.85, 0.15, 1.0];
+                    _modeTxt ctrlSetStructuredText parseText "<t align='left' size='0.74' font='PuristaBold' color='#ffe044'>LOCK</t>";
+                    private _lockPct = if (finite _burnProgress) then { round (_burnProgress * 100) } else { 0 };
+                    _ftrTxt ctrlSetStructuredText parseText format ["<t align='center' size='0.54' font='PuristaMedium' color='#ffe044'>LOCK: %1%% [%2m]</t>", _lockPct, _effRadius];
+                };
             };
         } else {
             if (_canPulse) then {
