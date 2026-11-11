@@ -70,7 +70,8 @@ class Extended_PostInit_EventHandlers {
 class CfgFunctions {
     #include "deScripts\CfgFunctions.hpp"
 };
-#include "deScripts\CfgLoadouts.hpp"
+// CfgLoadouts disabled until loadouts are created/used.
+//#include "deScripts\CfgLoadouts.hpp"
 #include "deScripts\dialogs\RscLoadoutLocker.hpp"
 
 /*           OTHER            */
