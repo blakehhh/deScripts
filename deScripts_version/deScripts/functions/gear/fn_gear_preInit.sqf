@@ -51,14 +51,6 @@ if (isClass (missionConfigFile >> "CfgLoadouts")) then {
         };
     }] call CBA_fnc_addClassEventHandler;
 
-    ["CAManBase", "Respawn", {
-        params ["_unit"];
-        if (_unit == player) then {
-            private _loadout = [_unit] call EFUNC(gear,selectLoadout);
-            [_unit, _loadout] call EFUNC(gear,applyLoadout);
-        };
-    }] call CBA_fnc_addClassEventHandler;
-
     ["CAManBase", "Local", {
         params ["_unit"];
         if (_unit == player && {local _unit} && {!EGVAR(gear,playerLoadoutGiven)}) then {

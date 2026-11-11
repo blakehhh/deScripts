@@ -20,5 +20,8 @@ if !(_unit call EFUNC(gear,hasSavedLoadout)) exitWith {false};
 
 _unit setVariable [QEGVAR(Gear,Loadout), nil];
 _unit setVariable [QEGVAR(Gear,SavedLoadout), nil];
+if (_unit == player) then {
+    missionNamespace setVariable [QEGVAR(Gear,SavedPlayerLoadout), nil];
+};
 
 true

@@ -225,9 +225,11 @@ switch (_mode) do {
                 private _current = player getVariable ["ace_medical_medicClass", 0];
                 if (_current == 1) then {
                     player setVariable ["ace_medical_medicClass", 0, true];
+                    player setUnitTrait ["medic", false];
                     systemChat "Role removed: Combat Lifesaver.";
                 } else {
                     player setVariable ["ace_medical_medicClass", 1, true];
+                    player setUnitTrait ["medic", true];
                     systemChat "Role updated: Combat Lifesaver (CLS).";
                 };
             };
@@ -235,9 +237,11 @@ switch (_mode) do {
                 private _current = player getVariable ["ace_medical_medicClass", 0];
                 if (_current == 2) then {
                     player setVariable ["ace_medical_medicClass", 0, true];
+                    player setUnitTrait ["medic", false];
                     systemChat "Role removed: Medic.";
                 } else {
                     player setVariable ["ace_medical_medicClass", 2, true];
+                    player setUnitTrait ["medic", true];
                     systemChat "Role updated: Medic (Doctor).";
                 };
             };
@@ -245,15 +249,18 @@ switch (_mode) do {
                 private _current = player getVariable ["ace_isEngineer", 0];
                 if (_current > 0) then {
                     player setVariable ["ace_isEngineer", 0, true];
+                    player setUnitTrait ["engineer", false];
                     systemChat "Role removed: Advanced Engineer.";
                 } else {
                     player setVariable ["ace_isEngineer", 2, true];
+                    player setUnitTrait ["engineer", true];
                     systemChat "Role updated: Advanced Engineer.";
                 };
             };
             case "EOD": {
                 private _current = player getVariable ["ACE_isEOD", false];
                 player setVariable ["ACE_isEOD", !_current, true];
+                player setUnitTrait ["explosiveSpecialist", !_current];
                 if (!_current) then {
                     systemChat "Role updated: Explosive/Demo Specialist (EOD) added.";
                 } else {
@@ -262,11 +269,21 @@ switch (_mode) do {
             };
             case "clearAll": {
                 player setVariable ["ace_medical_medicClass", 0, true];
+                player setUnitTrait ["medic", false];
                 player setVariable ["ace_isEngineer", 0, true];
+                player setUnitTrait ["engineer", false];
                 player setVariable ["ACE_isEOD", false, true];
+                player setUnitTrait ["explosiveSpecialist", false];
                 systemChat "All role permissions have been removed.";
             };
         };
+
+        // Persist traits to missionNamespace for respawn retention
+        private _savedMedic = player getVariable ["ace_medical_medicClass", 0];
+        private _savedEng = player getVariable ["ace_isEngineer", 0];
+        private _savedEOD = player getVariable ["ACE_isEOD", false];
+        missionNamespace setVariable [QEGVAR(Gear,SavedPlayerTraits), [_savedMedic, _savedEng, _savedEOD]];
+
         ["updateStatus"] call FUNC(loadoutLocker_ui);
     };
 
