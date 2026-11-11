@@ -42,7 +42,6 @@ if (isClass (missionConfigFile >> "CfgFunctions" >> "deScripts")) then {
 cScripts_fnc_doStarterCrate = FUNC(doStarterCrate);
 cScripts_fnc_addLoadoutLocker = FUNC(addLoadoutLocker);
 cScripts_fnc_addArsenal = FUNC(addArsenal);
-cScripts_fnc_addReGear = FUNC(addReGear);
 cScripts_fnc_addHeal = FUNC(addHeal);
 cScripts_fnc_setupLoadoutCategories = FUNC(setupLoadoutCategories);
 cScripts_fnc_setupLoadoutSelection = FUNC(setupLoadoutSelection);

@@ -65,36 +65,10 @@ INFO("init", "Initializing custom Zen Modules.");
 ] call zen_custom_modules_fnc_register;
 
 
-["TFG Utilities", "Apply Loadout",
-    {
-        params ["_modulePos", "_objectPos"];
-        [_modulePos, _objectPos] call EFUNC(zenModule,ApplyLoadout);
-    },
-    "\a3\modules_f\data\portraitmodule_ca.paa"
-] call zen_custom_modules_fnc_register;
-
-["TFG Utilities", "Regear Trooper",
-    {
-        params ["_modulePos", "_objectPos"];
-        [_modulePos, _objectPos] call EFUNC(zenModule,RegearTrooper);
-    },
-    "\a3\modules_f\data\portraitmodule_ca.paa"
-] call zen_custom_modules_fnc_register;
-
-
-
 ["TFG Mission", "Call Endex",
     {
         params ["_modulePos", "_objectPos"];
         [_modulePos, _objectPos] call EFUNC(zenModule,CallEndex);
-    },
-    "\a3\modules_f\data\portraitmodule_ca.paa"
-] call zen_custom_modules_fnc_register;
-
-["TFG Mission", "Take attendence",
-    {
-        [QGVAR(getAttendance)] call CBA_fnc_localEvent;
-        ["All attended players have been saved to your RPT log"] call zen_common_fnc_showMessage;
     },
     "\a3\modules_f\data\portraitmodule_ca.paa"
 ] call zen_custom_modules_fnc_register;

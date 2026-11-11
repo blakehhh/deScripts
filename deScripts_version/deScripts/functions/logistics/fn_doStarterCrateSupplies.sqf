@@ -28,7 +28,7 @@ _companySelector = toUpper(_companySelector);
 
 // Create categories
 private _officer = ["OFFICER"];
-private _tfg = ["TFG DEFAULT"];
+private _tfg = ["TFG DEFAULT", "TFG"];
 
 if !(_companySelector in (["NONE", "FULL", "ALL", "MANUAL"] + _officer + _tfg)) exitWith {
     ERROR_2("StarterCrate", "%1 (Starter Crate Supplies) is using a unsupported cartegory '%2'.", _crate, _companySelector);
@@ -37,6 +37,7 @@ if !(_companySelector in (["NONE", "FULL", "ALL", "MANUAL"] + _officer + _tfg)) 
 INFO_3("StarterCrate", "Applying %1 items to %2 (%3)", _companySelector, _crate, typeOf _crate);
 
 private _container = switch (_companySelector) do {
+    case "TFG";
     case "TFG DEFAULT": {GET_CONTAINER("tfg_default");};
 
     case "FULL";
@@ -52,6 +53,12 @@ private _container = switch (_companySelector) do {
     case "MANUAL";
     case "NONE": {[]};
     default {[]};
+};
+
+// If manual, none, or if no supplies are defined, do not wipe existing editor inventory
+if (_companySelector in ["MANUAL", "NONE", ""] || {_container isEqualTo []}) exitWith {
+    INFO_2("StarterCrate", "Preserving editor cargo for %1 (selector: %2)", _crate, _companySelector);
+    true
 };
 
 [_crate, _container] call FUNC(setCargo);

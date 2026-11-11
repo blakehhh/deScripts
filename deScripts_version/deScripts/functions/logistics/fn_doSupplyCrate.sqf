@@ -54,40 +54,5 @@ if (isServer) then {
 [_crate, true] call ace_dragging_fnc_setDraggable;
 [_crate, true] call ace_dragging_fnc_setCarryable;
 
-// If a correct classname add texture
-private _smallBox = [
-    "Box_T_East_Ammo_F",
-    "Box_East_Ammo_F",
-    "Box_NATO_Ammo_F",
-
-    "Box_T_East_WpsSpecial_F",
-    "Box_East_WpsSpecial_F",
-    "Box_T_NATO_WpsSpecial_F",
-    "Box_NATO_WpsSpecial_F",
-
-    "Box_East_AmmoOrd_F",
-    "Box_NATO_AmmoOrd_F",
-
-    "Box_T_East_Wps_F",
-    "Box_East_Wps_F",
-    "Box_T_NATO_Wps_F",
-    "Box_NATO_Wps_F",
-
-    "Box_East_Grenades_F",
-    "Box_NATO_Grenades_F",
-
-    "Box_East_WpsLaunch_F",
-    "Box_NATO_WpsLaunch_F"
-];
-private _largeBox = [
-    "B_CargoNet_01_ammo_F"
-];
-if (typeOf _crate in _smallBox) then {
-    _crate setObjectTextureGlobal  [0, "\z\cav\addons\supplies\data\Ammobox_7CAV_co.paa"];
-};
-if (typeOf _crate in _largeBox) then {
-    _crate setObjectTextureGlobal  [1, "\z\cav\addons\supplies\data\Ammobox_7CAV_co.paa"];
-};
-
 // Add object to the curator for all Zeuses
 _crate call ace_zeus_fnc_addObjectToCurator;

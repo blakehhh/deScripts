@@ -77,10 +77,8 @@ params ["_modulePos", "_objectPos"];
 
         missionNamespace setVariable [QEGVAR(Mission,Endex), true, true];
         INFO_2("", "Mission var %1 is set %2", QEGVAR(Mission,Endex), missionNamespace getVariable [QEGVAR(Mission,Endex), false]);
-        
-        [QGVAR(getAttendance)] call CBA_fnc_localEvent;
 
-        ["Endex called (All attended players have been saved to your RPT log)"] call zen_common_fnc_showMessage;
+        ["Endex called"] call zen_common_fnc_showMessage;
     },
     {},
     [_modulePos]

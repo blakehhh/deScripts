@@ -68,9 +68,6 @@ class deScripts {
     };
     class systems {
         file = "deScripts\functions\systems";
-        class addInsigniaSelection {};
-        class addInsigniaSelectionList {};
-
         class allowLoadout {};
         class setupLoadoutSelection {};
         class setupLoadoutCategories {};
@@ -99,7 +96,6 @@ class deScripts {
         class para_backpack {};
 
         // Buttons and options
-        class addReGear {};
         class addHeal {};
         class addArsenal {};
         class addEatMeal {};
@@ -124,7 +120,6 @@ class deScripts {
         class renameObject {};
         class getIcon {};
         
-        class getAttendance {};
         class getServerMetrics {};
     };
 
@@ -134,11 +129,6 @@ class deScripts {
 
         class zenModule_CreateStarterCrate {};
         class zenModule_CreateSupplyCrate {};
-
-        class zenModule_applyLoadout {};
-        class zenModule_RegearTrooper {};
-
-
 
         class zenModule_CallEndex {};
     };
