@@ -73,6 +73,118 @@ INFO("init", "Initializing custom Zen Modules.");
     "\a3\modules_f\data\portraitmodule_ca.paa"
 ] call zen_custom_modules_fnc_register;
 
+["TFG Mission", "Add HALO Jump",
+    {
+        params ["_modulePos", "_objectPos"];
+        if (isNull _objectPos || {!(_objectPos isKindOf "Air")}) exitWith {
+            ["Place on an aircraft or helicopter"] call zen_common_fnc_showMessage;
+        };
+        if (!isNil {_objectPos getVariable QEGVAR(VehicleFunc,HaloAction)}) exitWith {
+            ["HALO Jump action is already applied to this aircraft"] call zen_common_fnc_showMessage;
+        };
+
+        [
+            "Configure HALO Jump",
+            [
+                ["SLIDER", ["Minimum Altitude (m)", "Minimum aircraft altitude (AGL) required to use the HALO Jump action"], [0, 10000, 5000, 0], false],
+                ["COMBO", ["Parachute Backpack", "Parachute backpack equipped on jump (current backpack is stowed to chest)"], [["B_Parachute"], ["Steerable Parachute (B_Parachute)"], 0], false],
+                ["CHECKBOX", ["Staggered Jump Exit", "Alternates jumpers between left (+12m) and right (-12m) rear exit offsets"], false, false]
+            ],
+            {
+                params ["_dialogValues", "_args"];
+                _dialogValues params ["_minAltitude", "_chuteBackpackClass", "_allowStaggered"];
+                _args params ["_vehicle"];
+                if (isNull _vehicle || {!alive _vehicle}) exitWith {};
+                if (!isNil {_vehicle getVariable QEGVAR(VehicleFunc,HaloAction)}) exitWith {
+                    ["HALO Jump action is already applied to this aircraft"] call zen_common_fnc_showMessage;
+                };
+
+                [_vehicle, round _minAltitude, _chuteBackpackClass, _allowStaggered] remoteExec [QFUNC(addHaloJump), 0, _vehicle];
+                [format ["Added HALO Jump (Min Alt: %1m) to %2", round _minAltitude, getText (configFile >> "CfgVehicles" >> typeOf _vehicle >> "displayName")]] call zen_common_fnc_showMessage;
+            },
+            {},
+            [_objectPos]
+        ] call zen_dialog_fnc_create;
+    },
+    "\A3\ui_f\data\map\vehicleicons\iconParachute_ca.paa"
+] call zen_custom_modules_fnc_register;
+
+["TFG Mission", "Add Static Line Jump",
+    {
+        params ["_modulePos", "_objectPos"];
+        if (isNull _objectPos || {!(_objectPos isKindOf "Air")}) exitWith {
+            ["Place on an aircraft or helicopter"] call zen_common_fnc_showMessage;
+        };
+        if (!isNil {_objectPos getVariable QEGVAR(VehicleFunc,JumpAction)}) exitWith {
+            ["Static Line Jump action is already applied to this aircraft"] call zen_common_fnc_showMessage;
+        };
+
+        [
+            "Configure Static Line Jump",
+            [
+                ["SLIDER", ["Minimum Altitude (m)", "Lowest altitude (AGL) where the Static Line Jump action is available"], [50, 2000, 180, 0], false],
+                ["SLIDER", ["Maximum Altitude (m)", "Highest altitude (AGL) where the Static Line Jump action is available"], [100, 5000, 350, 0], false],
+                ["SLIDER", ["Maximum Speed (km/h)", "Maximum aircraft speed (km/h) allowed for static-line exit"], [100, 800, 310, 0], false],
+                ["COMBO", ["Parachute Type", "Deployed parachute vehicle class attached automatically after exit"], [["NonSteerable_Parachute_F", "Steerable_Parachute_F"], ["Non-Steerable T-10 (Default)", "Steerable Canopy"], 0], false],
+                ["CHECKBOX", ["Staggered Jump Exit", "Alternates jumpers between left (+12m) and right (-12m) rear exit offsets"], false, false]
+            ],
+            {
+                params ["_dialogValues", "_args"];
+                _dialogValues params ["_minAltitude", "_maxAltitude", "_maxSpeed", "_chuteVehicleClass", "_allowStaggered"];
+                _args params ["_vehicle"];
+                if (isNull _vehicle || {!alive _vehicle}) exitWith {};
+                if (!isNil {_vehicle getVariable QEGVAR(VehicleFunc,JumpAction)}) exitWith {
+                    ["Static Line Jump action is already applied to this aircraft"] call zen_common_fnc_showMessage;
+                };
+
+                private _minAlt = round _minAltitude;
+                private _maxAlt = (round _maxAltitude) max _minAlt;
+                private _spd = round _maxSpeed;
+
+                [_vehicle, _minAlt, _maxAlt, _spd, _chuteVehicleClass, _allowStaggered] remoteExec [QFUNC(addLineJump), 0, _vehicle];
+                [format ["Added Static Line Jump (%1m-%2m, <=%3 km/h) to %4", _minAlt, _maxAlt, _spd, getText (configFile >> "CfgVehicles" >> typeOf _vehicle >> "displayName")]] call zen_common_fnc_showMessage;
+            },
+            {},
+            [_objectPos]
+        ] call zen_dialog_fnc_create;
+    },
+    "\A3\ui_f\data\map\vehicleicons\iconParachute_ca.paa"
+] call zen_custom_modules_fnc_register;
+
+["TFG Mission", "Add Helicopter Get Out Side",
+    {
+        params ["_modulePos", "_objectPos"];
+        if (isNull _objectPos || {!(_objectPos isKindOf "Air")}) exitWith {
+            ["Place on an aircraft or helicopter"] call zen_common_fnc_showMessage;
+        };
+        if (!isNil {_objectPos getVariable QEGVAR(VehicleFunc,GetOutAction)}) exitWith {
+            ["Get Out Side actions are already applied to this aircraft"] call zen_common_fnc_showMessage;
+        };
+
+        [
+            "Configure Helicopter Get Out Side",
+            [
+                ["CHECKBOX", ["Color-Coded Actions", "Highlights 'Get out Left Side' in Red and 'Get out Right Side' in Blue on the scroll menu"], true, false]
+            ],
+            {
+                params ["_dialogValues", "_args"];
+                _dialogValues params ["_useColor"];
+                _args params ["_vehicle"];
+                if (isNull _vehicle || {!alive _vehicle}) exitWith {};
+                if (!isNil {_vehicle getVariable QEGVAR(VehicleFunc,GetOutAction)}) exitWith {
+                    ["Get Out Side actions are already applied to this aircraft"] call zen_common_fnc_showMessage;
+                };
+
+                [_vehicle, _useColor] remoteExec [QFUNC(addGetOutHelo), 0, _vehicle];
+                [format ["Added Get Out Left/Right Side actions to %1", getText (configFile >> "CfgVehicles" >> typeOf _vehicle >> "displayName")]] call zen_common_fnc_showMessage;
+            },
+            {},
+            [_objectPos]
+        ] call zen_dialog_fnc_create;
+    },
+    "\A3\ui_f\data\map\vehicleicons\iconHelicopter_ca.paa"
+] call zen_custom_modules_fnc_register;
+
 
 ["TFG EWAR", "Create Jammer Area",
     {
@@ -95,7 +207,7 @@ INFO("init", "Initializing custom Zen Modules.");
             [ASLToATL _modulePos]
         ] call zen_dialog_fnc_create;
     },
-    "\a3\modules_f\data\portraitmodule_ca.paa"
+    "\a3\ui_f\data\igui\cfg\simpletasks\types\radio_ca.paa"
 ] call zen_custom_modules_fnc_register;
 
 ["TFG EWAR", "Attach Jammer to Object",
@@ -104,12 +216,26 @@ INFO("init", "Initializing custom Zen Modules.");
         if (isNull _objectPos) exitWith {
             ["Select a vehicle or object to attach the jammer to"] call zen_common_fnc_showMessage;
         };
+
+        private _objSide = if (count (crew _objectPos) > 0) then {
+            side (group ((crew _objectPos) select 0))
+        } else {
+            if (_objectPos isKindOf "CAManBase") then { side (group _objectPos) } else { sideUnknown }
+        };
+        private _defaultSideIdx = switch (_objSide) do {
+            case west: { 1 };
+            case east: { 2 };
+            case independent: { 3 };
+            case civilian: { 4 };
+            default { 0 };
+        };
+
         [
             "Attach EWAR Jammer to Object",
             [
                 ["SLIDER", ["Jamming Radius (m)", "Outer radius of the jamming bubble in meters"], [50, 1500, 300, 0], false],
                 ["SLIDER", ["Core Cut Ratio", "Inner fraction of radius where link is completely severed (0 = interference only)"], [0, 0.9, 0, 2], false],
-                ["COMBO", ["Exempt Side", "Faction unaffected by this jammer"], [[sideUnknown, west, east, independent, civilian], ["None (Affect All)", "BLUFOR", "OPFOR", "Independent", "Civilian"], 0], false]
+                ["COMBO", ["Exempt Side", "Faction unaffected by this jammer"], [[sideUnknown, west, east, independent, civilian], ["None (Affect All)", "BLUFOR", "OPFOR", "Independent", "Civilian"], _defaultSideIdx], false]
             ],
             {
                 params ["_dialogValues", "_args"];
@@ -123,7 +249,7 @@ INFO("init", "Initializing custom Zen Modules.");
             [_objectPos]
         ] call zen_dialog_fnc_create;
     },
-    "\a3\modules_f\data\portraitmodule_ca.paa"
+    "\a3\ui_f\data\igui\cfg\simpletasks\types\repair_ca.paa"
 ] call zen_custom_modules_fnc_register;
 
 ["TFG EWAR", "Equip Jammer Backpack (AI)",
@@ -193,8 +319,34 @@ INFO("init", "Initializing custom Zen Modules.");
                 if (isNull _unit || {!alive _unit}) exitWith {};
 
                 if ((toLower (backpack _unit)) find "b_radiobag_01" == -1) then {
+                    private _oldBag = unitBackpack _unit;
+                    private _savedItems = if (!isNull _oldBag) then { getItemCargo _oldBag } else { [[], []] };
+                    private _savedMags = if (!isNull _oldBag) then { magazinesAmmoCargo _oldBag } else { [] };
+                    private _savedWpns = if (!isNull _oldBag) then { weaponsItemsCargo _oldBag } else { [] };
+                    private _savedBags = if (!isNull _oldBag) then { getBackpackCargo _oldBag } else { [[], []] };
+
                     removeBackpackGlobal _unit;
                     _unit addBackpackGlobal _bagClass;
+
+                    private _newBag = unitBackpack _unit;
+                    if (!isNull _newBag) then {
+                        clearItemCargoGlobal _newBag;
+                        clearMagazineCargoGlobal _newBag;
+                        clearWeaponCargoGlobal _newBag;
+                        clearBackpackCargoGlobal _newBag;
+                        {
+                            _newBag addItemCargoGlobal [_x, (_savedItems select 1) select _forEachIndex];
+                        } forEach (_savedItems select 0);
+                        {
+                            _newBag addMagazineAmmoCargo [_x select 0, 1, _x select 1];
+                        } forEach _savedMags;
+                        {
+                            _newBag addWeaponWithAttachmentsCargoGlobal [_x, 1];
+                        } forEach _savedWpns;
+                        {
+                            _newBag addBackpackCargoGlobal [_x, (_savedBags select 1) select _forEachIndex];
+                        } forEach (_savedBags select 0);
+                    };
                 };
 
                 [_unit] call FUNC(ewar_removeJammer);
@@ -208,19 +360,28 @@ INFO("init", "Initializing custom Zen Modules.");
             [_objectPos]
         ] call zen_dialog_fnc_create;
     },
-    "\a3\modules_f\data\portraitmodule_ca.paa"
+    "\a3\ui_f\data\igui\cfg\simpletasks\types\backpack_ca.paa"
 ] call zen_custom_modules_fnc_register;
 
 ["TFG EWAR", "Remove Nearby Jammers",
     {
         params ["_modulePos", "_objectPos"];
+        if (!isNull _objectPos && {isPlayer _objectPos}) exitWith {
+            ["Cannot remove player-equipped EWAR jammer"] call zen_common_fnc_showMessage;
+        };
+
+        private _removedAttached = false;
         if (!isNull _objectPos) then {
             private _attachedID = _objectPos getVariable [QGVAR(ewar_jammerID), ""];
-            if (_attachedID != "") exitWith {
+            if (_attachedID != "") then {
                 [_objectPos] call FUNC(ewar_removeJammer);
+                _objectPos setVariable [QGVAR(ewar_isJammerActive), false, true];
+                _objectPos setVariable [QGVAR(ewar_jammerID), nil, true];
                 ["Removed EWAR jammer from object"] call zen_common_fnc_showMessage;
+                _removedAttached = true;
             };
         };
+        if (_removedAttached) exitWith {};
 
         private _posATL = ASLToATL _modulePos;
         private _removedCount = 0;
@@ -228,24 +389,34 @@ INFO("init", "Initializing custom Zen Modules.");
             private _toRemove = [];
             {
                 _x params ["_id", "_source"];
-                private _jPos = if (_source isEqualType objNull) then {
-                    if (isNull _source) then { [0, 0, 0] } else { getPosATL _source }
-                } else {
-                    _source
-                };
-                if (_jPos isNotEqualTo [0, 0, 0] && {(_posATL distance _jPos) <= 100}) then {
-                    _toRemove pushBack _id;
+                private _isPlayerJammer = ((_source isEqualType objNull) && {isPlayer _source}) ||
+                    {(_id find "EWAR_BP_") == 0} ||
+                    {(_id find "EWAR_PULSE_") == 0};
+                if (!_isPlayerJammer) then {
+                    private _jPos = if (_source isEqualType objNull) then {
+                        if (isNull _source) then { [0, 0, 0] } else { getPosATL _source }
+                    } else {
+                        _source
+                    };
+                    if (_jPos isNotEqualTo [0, 0, 0] && {(_posATL distance _jPos) <= 100}) then {
+                        _toRemove pushBack [_id, _source];
+                    };
                 };
             } forEach GVAR(ewar_jammers);
 
             {
-                [_x] call FUNC(ewar_removeJammer);
+                _x params ["_remId", "_remSrc"];
+                [_remId] call FUNC(ewar_removeJammer);
+                if ((_remSrc isEqualType objNull) && {!isNull _remSrc}) then {
+                    _remSrc setVariable [QGVAR(ewar_isJammerActive), false, true];
+                    _remSrc setVariable [QGVAR(ewar_jammerID), nil, true];
+                };
                 _removedCount = _removedCount + 1;
             } forEach _toRemove;
         };
         [format ["Removed %1 EWAR jammer(s) within 100m", _removedCount]] call zen_common_fnc_showMessage;
     },
-    "\a3\modules_f\data\portraitmodule_ca.paa"
+    "\a3\ui_f\data\igui\cfg\simpletasks\types\destroy_ca.paa"
 ] call zen_custom_modules_fnc_register;
 
 

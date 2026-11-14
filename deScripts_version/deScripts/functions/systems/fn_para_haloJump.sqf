@@ -52,7 +52,7 @@ sleep 1.5;
 
 sleep 0.5;
 
-[_player] call EFUNC(para,backpack);
+[_player, _chuteBackpackClass] call EFUNC(para,backpack);
 
 sleep 0.5;
 
