@@ -14,6 +14,9 @@
 
 params [["_unit", objNull, [objNull]]];
 
+if (!isServer) exitWith {};
+if (isNull _unit) exitWith {};
+
 private _classname = typeOf _unit;
 private _postion   = getPosASL _unit;
 private _vectorUp  = vectorUp _unit;
@@ -22,7 +25,7 @@ private _side      = side _unit;
 
 deleteVehicle _unit;
 
-_agent = createAgent [_classname, _postion, [], 0, 'CAN_COLLIDE'];
+private _agent = createAgent [_classname, _postion, [], 0, 'CAN_COLLIDE'];
 _agent setPosASL _postion;
 _agent setVectorDirAndUp [_vectorDir, _vectorUp];
 
