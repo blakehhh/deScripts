@@ -604,19 +604,6 @@ The EWAR subsystem models counter-UAS (C-UAS) electronic jamming fields and man-
 | **Ground UGVs** | THeMIS, Honeybadger, UGV Stomper, ED-1D/E Demining UGVs | Terminal disconnects; waypoints cleared; brakes engaged (`setVelocity [0,0,0]`); engine stopped (`setAutonomous true` restored on recovery). |
 | **Naval USVs** | Magura V5 USV | Terminal disconnects; waypoints cleared; propulsion stopped; drifts on water current (`setAutonomous true` restored on recovery). |
 
-### Planned / Future EWAR Roadmap (Modpack & Subsystem Ideas)
-The following prospective features and modpack integrations are documented for future development planning and have not yet been implemented in SQF:
-
-* **RF-Triggered IED / Remote Detonator Jamming (Convoy CREW):** Integrate `ACE_explosives_fnc_addDetonateHandler` to block clacker/cellphone/RF-triggered detonations inside active jammer radii while exempting wired/pressure-plate triggers.
-* **ACRE2 Tactical Comms Degradation & Spectrum Emitter Detection (SIGINT / DF):** Hook `acre_api_fnc_setCustomSignalFunc` to attenuate or inject static into tactical VHF/UHF radio traffic near active jammers, and query `acre_api_fnc_isBroadcasting` alongside unit frequencies to plot active enemy radio emitters on the Spectrum Device LCD for SIGINT direction-finding.
-* **`LAMBS_Danger.fsm` Comms & Artillery Denial:** Suppress OPFOR AI information sharing and dynamic artillery/reinforcement call-ins inside heavy jamming envelopes. *(Architectural note: `lambs_main` only exposes a global `lambs_main_radioDisabled` setting or full `lambs_danger_disableAI` / `lambs_danger_disablegroupAI` toggles rather than a clean per-group radio mute API, requiring careful mission-balance scoping.)*
-* **EMCON Risk & Passive ESM:** Treat active friendly TX/omni jammers as high-power RF beacons detectable at long range by enemy ESM/ELINT sensors, AI artillery, or anti-radiation seekers—forcing operators to manage emissions (`TX OFF` / momentary `PULSE`) under hostile EW threat.
-* **Datalink & Active Radar Suppression:** Dynamically toggle `setVehicleReportRemoteTargets` and `setVehicleRadar` on sensors and SAM/radar platforms operating inside heavy jamming envelopes to degrade Link-16-style shared target tracks.
-* **ATAK & `cTab 1erGTD` Mesh/BFT Degradation:** Degrade or mask Blue Force Tracking, marker sync, and live feed overlays on `Iceman_WR_*` / `Iceman_Phone_aiPhones` (ATAK) and `cTab 1erGTD` tablets when an operator enters severe hostile EW interference.
-* **`GX - Drones` Failsafe Hardening:** Account for `GX_DRONES_COMMAND_NON_CONNECTED_ENABLE` so unmanned assets remain realistically degraded even when offline autonomy is enabled, while exempting fiber-optic-tethered FPV drones (`_uav` class/variable checks) from RF jamming.
-* **Tier 3 Zeus & Mission-Maker Force Multipliers:** Expand Zeus placement modules with selectable **Jammer Domains** (`C-UAS`, `Comms`, `Dual`), **Destructible EW Masts / Generators** (linking a jammer's lifecycle to physical radar/mast destruction or ACE repair), and **Sweep Duty Cycles** (intermittent rotating/pulsing hostile EW sectors).
-* **Low-Clutter Terrain-Block & Obstruction Cues:** Differentiate partial obstruction or hard terrain masking without cluttering the LCD—for example, a lower-pitch/slower audio chirp cadence for `LOCK [OBS]` and an intermittent LCD waveform pulse / amber RCU LED blink when `TERRAIN BLK` interrupts line-of-sight.
-
 ---
 
 ## 12. Documents & Briefing Checklists (`deScripts/functions/documents/`)
