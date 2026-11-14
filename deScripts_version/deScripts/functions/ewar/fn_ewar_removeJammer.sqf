@@ -32,4 +32,7 @@ if (_target isEqualType objNull) then {
 
 if (_jammerID == "") exitWith {};
 
-[QGVAR(ewar_removeJammer), [_jammerID]] call CBA_fnc_globalEvent;
+if (!isServer && {!isNil QGVAR(ewar_jammers)}) then {
+    GVAR(ewar_jammers) = GVAR(ewar_jammers) select { (_x select 0) != _jammerID };
+};
+[QGVAR(ewar_removeJammer), [_jammerID]] call CBA_fnc_serverEvent;

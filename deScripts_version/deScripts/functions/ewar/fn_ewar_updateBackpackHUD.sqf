@@ -25,7 +25,7 @@ if (_popupSeconds > 0) then {
     GVAR(ewar_hudPopupUntil) = diag_tickTime + _popupSeconds;
 };
 
-private _hasBackpack = alive player && {(toLower (backpack player)) find "b_radiobag_01" != -1};
+private _hasBackpack = [player] call GVAR(ewar_fnc_hasJammerPack);
 private _isActive = player getVariable [QGVAR(ewar_isJammerActive), false];
 private _battery = player getVariable [QGVAR(ewar_backpackBattery), 100];
 private _showPersistent = profileNamespace getVariable [QGVAR(ewar_showHUD), true];
@@ -86,13 +86,26 @@ if (isNil "_burnProgress" || {!(finite _burnProgress)} || {_burnProgress < 0}) t
     _burnProgress = 0;
     GVAR(ewar_burnProgress) = 0;
 };
+GVAR(ewar_isActivelyCharging) = false;
 
 // ============================================================================
 // 1. DRIVE PHYSICAL SPECTRUM DEVICE LCD SCREEN (#EM_* Engine Variables)
 // ============================================================================
 if (_holdingESD) then {
-    // Ensure 3D muzzle antenna matches current beam focus mode on initial draw
-    if !(player getVariable [QGVAR(ewar_isSwappingAntenna), false]) then {
+    // Ensure 3D muzzle antenna matches current beam focus mode on draw/mode change (throttled)
+    private _curWpn = currentWeapon player;
+    if (
+        !(player getVariable [QGVAR(ewar_isSwappingAntenna), false]) &&
+        {
+            (missionNamespace getVariable [QGVAR(ewar_lastCheckedBeamMode), -1]) != _beamMode ||
+            {(missionNamespace getVariable [QGVAR(ewar_lastCheckedHandgun), ""]) != _curWpn} ||
+            {diag_tickTime >= (missionNamespace getVariable [QGVAR(ewar_nextAntennaCheckTick), 0])}
+        }
+    ) then {
+        GVAR(ewar_lastCheckedBeamMode) = _beamMode;
+        GVAR(ewar_lastCheckedHandgun) = _curWpn;
+        GVAR(ewar_nextAntennaCheckTick) = diag_tickTime + 0.5;
+
         private _expectedAntenna = switch (_beamMode) do {
             case 1: { "muzzle_antenna_02_f" };
             case 2: { "muzzle_antenna_03_f" };
@@ -115,8 +128,14 @@ if (_holdingESD) then {
     missionNamespace setVariable ["#EM_SMin", 0];
     missionNamespace setVariable ["#EM_SMax", 100];
 
-    // Map active beam focus angle (45 deg / 20 deg / 10 deg) to the center selection gate on the LCD screen
-    private _halfGateSpan = (_coneAngle / 90) * 50;
+    // Map active beam focus angle (45 deg / 20 deg / 10 deg) proportionally to the LCD scan aperture
+    private _scanAperture = switch (_beamMode) do {
+        case 1: { 30 };
+        case 2: { 15 };
+        default { 45 };
+    };
+    private _halfAngle = _coneAngle * 0.5;
+    private _halfGateSpan = (_halfAngle / _scanAperture) * 50;
     missionNamespace setVariable ["#EM_SelMin", 2450 - _halfGateSpan];
     missionNamespace setVariable ["#EM_SelMax", 2450 + _halfGateSpan];
 
@@ -135,21 +154,26 @@ if (_holdingESD) then {
         (_aimDir select 0) atan2 (_aimDir select 1)
     };
     private _playerEye = eyePos player;
-    private _halfAngle = _coneAngle * 0.5;
     private _playerSide = side (group player);
 
     private _dt = (diag_tickTime - (missionNamespace getVariable [QGVAR(ewar_lastBurnTick), diag_tickTime])) max 0.01 min 0.5;
     GVAR(ewar_lastBurnTick) = diag_tickTime;
 
     private _exemptFriendly = missionNamespace getVariable [QEGVAR(Settings,ewar_backpackExemptFriendly), true];
-    // Antenna scan aperture and detection range scale with physical antenna attachment
     _scanRadius = _effRadius;
-    private _scanAperture = switch (_beamMode) do {
-        case 1: { 30 };
-        case 2: { 15 };
-        default { 45 };
+    private _nowTick = diag_tickTime;
+    private _nearbyUavs = if (
+        _nowTick >= (missionNamespace getVariable [QGVAR(ewar_nextUavScanTick), 0]) ||
+        {isNil QGVAR(ewar_cachedUavs)} ||
+        {(missionNamespace getVariable [QGVAR(ewar_cachedScanRadius), 0]) != _scanRadius}
+    ) then {
+        GVAR(ewar_nextUavScanTick) = _nowTick + 0.25;
+        GVAR(ewar_cachedScanRadius) = _scanRadius;
+        GVAR(ewar_cachedUavs) = _playerEye nearEntities [["Air", "Car", "Tank"], _scanRadius];
+        GVAR(ewar_cachedUavs)
+    } else {
+        GVAR(ewar_cachedUavs) select { !isNull _x && {alive _x} }
     };
-    private _nearbyUavs = _playerEye nearEntities [["Air", "Car", "Tank"], _scanRadius];
     private _lockedUav = objNull;
 
     // A. Scan Aerial & Ground Drones (Distinct RF Waveforms)
@@ -348,9 +372,14 @@ if (_holdingESD) then {
 
     // Active Electronic Warfare Burn-Through Dwell-Time Processing
     if (_targetInCone && {_isDirectional} && {_isTransmitting} && {!isNull _lockedUav}) then {
+        GVAR(ewar_isActivelyCharging) = true;
         private _prevTarget = missionNamespace getVariable [QGVAR(ewar_burnTarget), objNull];
         if (!isNull _prevTarget && {_prevTarget != _lockedUav}) then {
-            _prevTarget setVariable [QGVAR(ewar_burnIntensity), 0, true];
+            if ((_prevTarget getVariable [QGVAR(ewar_burnOperator), objNull]) in [objNull, player]) then {
+                _prevTarget setVariable [QGVAR(ewar_burnIntensity), 0, true];
+                _prevTarget setVariable [QGVAR(ewar_burnOperator), nil, true];
+                _prevTarget setVariable [QGVAR(ewar_lastSyncedBurn), 0];
+            };
             _burnProgress = _burnProgress * 0.5;
         };
         GVAR(ewar_burnTarget) = _lockedUav;
@@ -369,7 +398,18 @@ if (_holdingESD) then {
         _burnProgress = ((_burnProgress + (_chargeRate * _dt)) max 0) min 1.0;
         if (!finite _burnProgress) then { _burnProgress = 0; };
         GVAR(ewar_burnProgress) = _burnProgress;
-        _lockedUav setVariable [QGVAR(ewar_burnIntensity), _burnProgress, true];
+
+        // Throttle global network updates to >=10% steps or threshold crossings instead of 12.5 Hz spam
+        private _lastSynced = _lockedUav getVariable [QGVAR(ewar_lastSyncedBurn), -1];
+        if (
+            (abs (_burnProgress - _lastSynced) >= 0.10) ||
+            {_burnProgress >= 1.0 && {_lastSynced < 1.0}} ||
+            {!((_lockedUav getVariable [QGVAR(ewar_burnOperator), objNull]) isEqualTo player)}
+        ) then {
+            _lockedUav setVariable [QGVAR(ewar_burnIntensity), _burnProgress, true];
+            _lockedUav setVariable [QGVAR(ewar_burnOperator), player, true];
+            _lockedUav setVariable [QGVAR(ewar_lastSyncedBurn), _burnProgress];
+        };
 
         if (_burnProgress >= 1.0) then {
             _targetInKill = true;
@@ -385,7 +425,16 @@ if (_holdingESD) then {
             GVAR(ewar_burnProgress) = _burnProgress;
             private _prevTarget = missionNamespace getVariable [QGVAR(ewar_burnTarget), objNull];
             if (!isNull _prevTarget) then {
-                _prevTarget setVariable [QGVAR(ewar_burnIntensity), _burnProgress, true];
+                if ((_prevTarget getVariable [QGVAR(ewar_burnOperator), objNull]) in [objNull, player]) then {
+                    private _lastSynced = _prevTarget getVariable [QGVAR(ewar_lastSyncedBurn), 0];
+                    if (_burnProgress <= 0 || {abs (_burnProgress - _lastSynced) >= 0.10}) then {
+                        _prevTarget setVariable [QGVAR(ewar_burnIntensity), _burnProgress, true];
+                        _prevTarget setVariable [QGVAR(ewar_lastSyncedBurn), _burnProgress];
+                        if (_burnProgress <= 0) then {
+                            _prevTarget setVariable [QGVAR(ewar_burnOperator), nil, true];
+                        };
+                    };
+                };
                 if (_burnProgress <= 0) then {
                     GVAR(ewar_burnTarget) = objNull;
                 };
@@ -398,33 +447,39 @@ if (_holdingESD) then {
     missionNamespace setVariable ["#EM_Progress", _burnProgress];
 
     // Clear Muzzle_1 ammo so the hip-fire 3D model screen clears "999.9 MHz"
-    player setAmmo ["Muzzle_1", 0];
+    if ((player ammo "Muzzle_1") > 0) then {
+        player setAmmo ["Muzzle_1", 0];
+    };
 
     // Hide the native "2.40 GHz", "2.4 GHz", and "2.50 GHz" labels at the bottom of the KAISERKOM LCD screen
     // Contact DLC stores the Spectrum Device weaponInfoType display via uiNamespace "bin_object"
-    private _esdDisp = ctrlParent (uiNamespace getVariable ["bin_object", controlNull]);
-    if (!isNull _esdDisp) then {
-        private _ctrlSpec = _esdDisp displayCtrl 1999;
-        if (!isNull _ctrlSpec) then {
-            private _freqCtrls = +(_ctrlSpec getVariable ["bin_graphLegendH", []]);
-            _freqCtrls pushBackUnique (_ctrlSpec getVariable ["bin_selectedText", controlNull]);
-            {
-                _freqCtrls pushBackUnique (_esdDisp displayCtrl _x);
-            } forEach [4001, 5600, 5601, 5650];
+    private _binObj = uiNamespace getVariable ["bin_object", controlNull];
+    if (!isNull _binObj && {!(_binObj isEqualTo (missionNamespace getVariable [QGVAR(ewar_lastHiddenBinObj), controlNull]))}) then {
+        GVAR(ewar_lastHiddenBinObj) = _binObj;
+        private _esdDisp = ctrlParent _binObj;
+        if (!isNull _esdDisp) then {
+            private _ctrlSpec = _esdDisp displayCtrl 1999;
+            if (!isNull _ctrlSpec) then {
+                private _freqCtrls = +(_ctrlSpec getVariable ["bin_graphLegendH", []]);
+                _freqCtrls pushBackUnique (_ctrlSpec getVariable ["bin_selectedText", controlNull]);
+                {
+                    _freqCtrls pushBackUnique (_esdDisp displayCtrl _x);
+                } forEach [4001, 5600, 5601, 5650];
 
-            {
-                if (!isNull _x) then {
-                    _x ctrlSetText "";
-                    _x ctrlSetTextColor [0, 0, 0, 0];
-                    _x ctrlSetFade 1;
-                    _x ctrlShow false;
-                    _x ctrlCommit 0;
-                };
-            } forEach _freqCtrls;
+                {
+                    if (!isNull _x) then {
+                        _x ctrlSetText "";
+                        _x ctrlSetTextColor [0, 0, 0, 0];
+                        _x ctrlSetFade 1;
+                        _x ctrlShow false;
+                        _x ctrlCommit 0;
+                    };
+                } forEach _freqCtrls;
 
-            // Unbind references on _ctrlSpec so BIN_fnc_showPlayerSpectrumAnalyzer cannot re-populate them
-            _ctrlSpec setVariable ["bin_graphLegendH", []];
-            _ctrlSpec setVariable ["bin_selectedText", controlNull];
+                // Unbind references on _ctrlSpec so BIN_fnc_showPlayerSpectrumAnalyzer cannot re-populate them
+                _ctrlSpec setVariable ["bin_graphLegendH", []];
+                _ctrlSpec setVariable ["bin_selectedText", controlNull];
+            };
         };
     };
 
@@ -432,6 +487,19 @@ if (_holdingESD) then {
         private _tonePitch = if (_targetInKill) then { 2.2 } else { 1.2 + (_burnProgress * 0.8) };
         playSoundUI ["\A3\Sounds_F\sfx\hint-2.wss", 0.5, _tonePitch];
         GVAR(ewar_lastLockSound) = diag_tickTime;
+    };
+} else {
+    // Immediately clear lock & burn state if operator holsters hgun_esd_01_F or dies
+    private _staleTarget = missionNamespace getVariable [QGVAR(ewar_burnTarget), objNull];
+    if (_burnProgress > 0 || {!isNull _staleTarget}) then {
+        _burnProgress = 0;
+        GVAR(ewar_burnProgress) = 0;
+        if (!isNull _staleTarget && {(_staleTarget getVariable [QGVAR(ewar_burnOperator), objNull]) in [objNull, player]}) then {
+            _staleTarget setVariable [QGVAR(ewar_burnIntensity), 0, true];
+            _staleTarget setVariable [QGVAR(ewar_burnOperator), nil, true];
+            _staleTarget setVariable [QGVAR(ewar_lastSyncedBurn), 0];
+        };
+        GVAR(ewar_burnTarget) = objNull;
     };
 };
 

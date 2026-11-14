@@ -28,8 +28,7 @@ private _isActive = _unit getVariable [QGVAR(ewar_isJammerActive), false];
 private _newState = if (isNil "_state") then { !_isActive } else { _state };
 
 if (_newState) then {
-    private _currentBackpack = toLower (backpack _unit);
-    if (_currentBackpack find "b_radiobag_01" == -1) exitWith {};
+    if !([_unit] call GVAR(ewar_fnc_hasJammerPack)) exitWith {};
 
     private _battery = _unit getVariable [QGVAR(ewar_backpackBattery), 100];
     if (EGVAR(Settings,ewar_backpackRequiresBattery) && {_battery <= 0}) exitWith {
@@ -56,9 +55,12 @@ if (_newState) then {
     _unit setVariable [QGVAR(ewar_isJammerActive), false, true];
 
     GVAR(ewar_burnProgress) = 0;
+    GVAR(ewar_isActivelyCharging) = false;
     private _prevTarget = missionNamespace getVariable [QGVAR(ewar_burnTarget), objNull];
-    if (!isNull _prevTarget) then {
+    if (!isNull _prevTarget && {(_prevTarget getVariable [QGVAR(ewar_burnOperator), objNull]) in [objNull, _unit]}) then {
         _prevTarget setVariable [QGVAR(ewar_burnIntensity), 0, true];
+        _prevTarget setVariable [QGVAR(ewar_burnOperator), nil, true];
+        _prevTarget setVariable [QGVAR(ewar_lastSyncedBurn), 0];
     };
     GVAR(ewar_burnTarget) = objNull;
 

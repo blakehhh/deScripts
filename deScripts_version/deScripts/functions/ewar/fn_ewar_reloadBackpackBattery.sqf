@@ -39,11 +39,11 @@ if (!_hasGX && {!_hasACE}) exitWith {
         private _currentItems = items _unit;
         if ("GX_UAVBattery" in _currentItems) then {
             _unit removeItem "GX_UAVBattery";
-            _unit setVariable [QGVAR(ewar_backpackBattery), 100, true];
+            _unit setVariable [QGVAR(ewar_backpackBattery), 100, false];
         } else {
             if ("ACE_UAVBattery" in _currentItems) then {
                 _unit removeItem "ACE_UAVBattery";
-                _unit setVariable [QGVAR(ewar_backpackBattery), 100, true];
+                _unit setVariable [QGVAR(ewar_backpackBattery), 100, false];
             };
         };
 
@@ -51,5 +51,11 @@ if (!_hasGX && {!_hasACE}) exitWith {
         [5] call FUNC(ewar_updateBackpackHUD);
     },
     {},
-    "Replacing EWAR Jammer Battery..."
+    "Replacing EWAR Jammer Battery...",
+    {
+        params ["_args"];
+        _args params ["_unit"];
+        private _curItems = items _unit;
+        ([_unit] call GVAR(ewar_fnc_hasJammerPack)) && {("GX_UAVBattery" in _curItems) || {"ACE_UAVBattery" in _curItems}}
+    }
 ] call ace_common_fnc_progressBar;

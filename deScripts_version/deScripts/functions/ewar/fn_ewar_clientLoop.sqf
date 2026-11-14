@@ -28,7 +28,7 @@ if !(EGVAR(Settings,ewar_enable)) exitWith {
 private _isPackActive = player getVariable [QGVAR(ewar_isJammerActive), false];
 private _isPulsing = player getVariable [QGVAR(ewar_isPulsing), false];
 if (_isPackActive || {_isPulsing}) then {
-    if (!alive player || {(toLower (backpack player)) find "b_radiobag_01" == -1}) then {
+    if !([player] call GVAR(ewar_fnc_hasJammerPack)) then {
         player setVariable [QGVAR(ewar_isPulsing), false, true];
         [player, false] call FUNC(ewar_toggleBackpackJammer);
     } else {
@@ -38,9 +38,8 @@ if (_isPackActive || {_isPulsing}) then {
             private _powerDrainMult = if (_isDirectional) then {
                 private _baseDrain = missionNamespace getVariable [QEGVAR(Settings,ewar_directionalPowerDrain), 3.0];
                 private _drainMult = _baseDrain + (_beamMode * 1.0); // 3x (Wide), 4x (Focused), 5x (Spot)
-                private _burnProgress = missionNamespace getVariable [QGVAR(ewar_burnProgress), 0];
-                if (!isNil "_burnProgress" && {finite _burnProgress} && {_burnProgress > 0}) then {
-                    _drainMult = _drainMult * 2.0; // Burn-through actively surges power draw by an extra 2x
+                if (missionNamespace getVariable [QGVAR(ewar_isActivelyCharging), false]) then {
+                    _drainMult = _drainMult * 2.0; // Burn-through actively surges power draw by an extra 2x while locking
                 };
                 _drainMult
             } else {
@@ -51,7 +50,7 @@ if (_isPackActive || {_isPulsing}) then {
             private _batteryLifeSec = (EGVAR(Settings,ewar_backpackBatteryLife) max 1) * 60;
             private _drain = (0.5 / _batteryLifeSec) * 100 * _powerDrainMult;
             _battery = (_battery - _drain) max 0;
-            player setVariable [QGVAR(ewar_backpackBattery), _battery, true];
+            player setVariable [QGVAR(ewar_backpackBattery), _battery, false];
 
             if (_battery <= 0) then {
                 player setVariable [QGVAR(ewar_isPulsing), false, true];
@@ -139,11 +138,15 @@ if (!isNil QGVAR(ewar_jammers) && {GVAR(ewar_jammers) isNotEqualTo []}) then {
                             private _burnLevel = (_uav getVariable [QGVAR(ewar_burnIntensity), 0]) max 0 min 1;
                             if (!finite _burnLevel) then { _burnLevel = 0; };
                             private _baseIntensity = 0.25 + (0.55 * (1 - (_dist / (_effRadius max 1))));
-                            private _intensity = if (_objBlocked) then {
-                                // Penetrating interference when obstructed by objects/foliage (scaled by burn level)
-                                ((_baseIntensity * 0.50) + ((0.85 - (_baseIntensity * 0.50)) * (_burnLevel ^ 1.2))) min 0.85
+                            private _intensity = if (_burnLevel >= 1.0) then {
+                                1.0
                             } else {
-                                (_baseIntensity + ((1.0 - _baseIntensity) * (_burnLevel ^ 1.2))) min 1.0
+                                private _preKill = if (_objBlocked) then {
+                                    (_baseIntensity * 0.50) + ((0.84 - (_baseIntensity * 0.50)) * (_burnLevel ^ 1.2))
+                                } else {
+                                    _baseIntensity + ((0.84 - _baseIntensity) * (_burnLevel ^ 1.2))
+                                };
+                                _preKill min 0.84
                             };
                             if (!finite _intensity) then { _intensity = 0; };
                             if (_intensity > _maxIntensity) then {

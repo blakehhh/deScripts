@@ -40,6 +40,12 @@ if (_source isEqualType objNull) then {
     _source setVariable [QGVAR(ewar_jammerID), _jammerID, true];
 };
 
-[QGVAR(ewar_addJammer), [_jammerData]] call CBA_fnc_globalEvent;
+if (!isServer) then {
+    if (isNil QGVAR(ewar_jammers)) then {
+        GVAR(ewar_jammers) = [];
+    };
+    GVAR(ewar_jammers) pushBackUnique _jammerData;
+};
+[QGVAR(ewar_addJammer), [_jammerData]] call CBA_fnc_serverEvent;
 
 _jammerID

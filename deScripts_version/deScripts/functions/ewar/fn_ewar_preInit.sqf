@@ -27,26 +27,31 @@ if (isNil QGVAR(ewar_jammedDrones)) then {
 GVAR(ewar_activeFX) = false;
 GVAR(ewar_nextStaticSound) = [0];
 
-// Event handler for synchronized jammer addition
+// Helper to check whether a unit wears a B_RadioBag_01_* in their backpack slot
+GVAR(ewar_fnc_hasJammerPack) = {
+    params [["_unit", objNull, [objNull]]];
+    if (isNull _unit || {!alive _unit}) exitWith { false };
+    ((toLower (backpack _unit)) find "b_radiobag_01") != -1
+};
+
+// Event handler for server-authoritative jammer addition
 [QGVAR(ewar_addJammer), {
     params ["_jammerData"];
+    if (!isServer) exitWith {};
     if (isNil QGVAR(ewar_jammers)) then {
         GVAR(ewar_jammers) = [];
     };
     GVAR(ewar_jammers) pushBackUnique _jammerData;
-    if (isServer) then {
-        publicVariable QGVAR(ewar_jammers);
-    };
+    publicVariable QGVAR(ewar_jammers);
 }] call CBA_fnc_addEventHandler;
 
-// Event handler for synchronized jammer removal
+// Event handler for server-authoritative jammer removal
 [QGVAR(ewar_removeJammer), {
     params ["_jammerID"];
+    if (!isServer) exitWith {};
     if (isNil QGVAR(ewar_jammers)) exitWith {};
     GVAR(ewar_jammers) = GVAR(ewar_jammers) select { (_x select 0) != _jammerID };
-    if (isServer) then {
-        publicVariable QGVAR(ewar_jammers);
-    };
+    publicVariable QGVAR(ewar_jammers);
 }] call CBA_fnc_addEventHandler;
 
 // Target event handler to execute physical fail-safe where the drone is local

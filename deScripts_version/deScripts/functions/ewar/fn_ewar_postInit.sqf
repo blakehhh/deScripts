@@ -71,7 +71,7 @@ if (hasInterface) then {
             {},
             {
                 params ["_target", "_player"];
-                EGVAR(Settings,ewar_enable) && {alive _player} && {(toLower (backpack _player)) find "b_radiobag_01" != -1}
+                EGVAR(Settings,ewar_enable) && {[_player] call GVAR(ewar_fnc_hasJammerPack)}
             }
         ] call ace_interact_menu_fnc_createAction;
 
@@ -346,8 +346,7 @@ if (hasInterface) then {
         QGVAR(ewar_keyFocusNarrow),
         ["Focus Beam (Narrow)", "Narrows the directional EWAR beam (45° -> 20° -> 10°) to increase range and kill distance."],
         {
-            if (!alive player) exitWith { false };
-            if ((toLower (backpack player)) find "b_radiobag_01" == -1) exitWith { false };
+            if !([player] call GVAR(ewar_fnc_hasJammerPack)) exitWith { false };
             if ((toLower (currentWeapon player)) find "hgun_esd_01" == -1) exitWith { false };
             private _cur = player getVariable [QGVAR(ewar_beamMode), 0];
             if (_cur < 2) then {
@@ -367,8 +366,7 @@ if (hasInterface) then {
         QGVAR(ewar_keyFocusWiden),
         ["Widen Beam", "Widens the directional EWAR beam (10° -> 20° -> 45°) to widen coverage and reduce battery drain."],
         {
-            if (!alive player) exitWith { false };
-            if ((toLower (backpack player)) find "b_radiobag_01" == -1) exitWith { false };
+            if !([player] call GVAR(ewar_fnc_hasJammerPack)) exitWith { false };
             if ((toLower (currentWeapon player)) find "hgun_esd_01" == -1) exitWith { false };
             private _cur = player getVariable [QGVAR(ewar_beamMode), 0];
             if (_cur > 0) then {
@@ -442,10 +440,16 @@ if (hasInterface) then {
                 private _ctrlTxt = ctrlText _ctrl;
                 if (_ctrlTxt != "") then {
                     if ((_ctrlTxt find "Radio Pack") != -1) then {
-                        _ctrl ctrlSetText ([_ctrlTxt] call GVAR(ewar_fnc_formatBagName));
+                        private _newTxt = [_ctrlTxt] call GVAR(ewar_fnc_formatBagName);
+                        if (_newTxt != _ctrlTxt) then {
+                            _ctrl ctrlSetText _newTxt;
+                        };
                     } else {
                         if ((_ctrlTxt find "Spectrum Device") != -1) then {
-                            _ctrl ctrlSetText ([_ctrlTxt] call GVAR(ewar_fnc_formatHandsetName));
+                            private _newTxt = [_ctrlTxt] call GVAR(ewar_fnc_formatHandsetName);
+                            if (_newTxt != _ctrlTxt) then {
+                                _ctrl ctrlSetText _newTxt;
+                            };
                         };
                     };
                 };
@@ -454,11 +458,15 @@ if (hasInterface) then {
                 private _ctrlTxtLower = toLower _ctrlTxt;
                 private _isBpSlot = (_idc in [6191, 6305, 1246]) || {(_ctrlTxtLower find "b_radiobag_01") != -1};
                 private _isHgSlot = (_idc in [612, 1244]) || {(_ctrlTxtLower find "esd_01") != -1};
+                private _curCtrlTip = ctrlTooltip _ctrl;
 
                 if (_isBpSlot && {_hasEwarBag}) then {
                     private _cfgName = getText (configFile >> "CfgVehicles" >> _bpClass >> "displayName");
                     private _ewarName = [_cfgName] call GVAR(ewar_fnc_formatBagName);
-                    _ctrl ctrlSetTooltip format ["%1 (%2 Items)", _ewarName, count (backpackItems player)];
+                    private _newTip = format ["%1 (%2 Items)", _ewarName, count (backpackItems player)];
+                    if (_newTip != _curCtrlTip) then {
+                        _ctrl ctrlSetTooltip _newTip;
+                    };
                 } else {
                     if (_isHgSlot && {_hasEwarHg}) then {
                         private _lines = ["EWAR C-UAS Handset"];
@@ -473,15 +481,23 @@ if (hasInterface) then {
                             _lines pushBack "Accessories:";
                             _lines append _accNames;
                         };
-                        _ctrl ctrlSetTooltip (_lines joinString endl);
+                        private _newTip = _lines joinString endl;
+                        if (_newTip != _curCtrlTip) then {
+                            _ctrl ctrlSetTooltip _newTip;
+                        };
                     } else {
-                        private _ctrlTip = ctrlTooltip _ctrl;
-                        if (_ctrlTip != "") then {
-                            if ((_ctrlTip find "Radio Pack") != -1) then {
-                                _ctrl ctrlSetTooltip ([_ctrlTip] call GVAR(ewar_fnc_formatBagName));
+                        if (_curCtrlTip != "") then {
+                            if ((_curCtrlTip find "Radio Pack") != -1) then {
+                                private _newTip = [_curCtrlTip] call GVAR(ewar_fnc_formatBagName);
+                                if (_newTip != _curCtrlTip) then {
+                                    _ctrl ctrlSetTooltip _newTip;
+                                };
                             } else {
-                                if ((_ctrlTip find "Spectrum Device") != -1) then {
-                                    _ctrl ctrlSetTooltip ([_ctrlTip] call GVAR(ewar_fnc_formatHandsetName));
+                                if ((_curCtrlTip find "Spectrum Device") != -1) then {
+                                    private _newTip = [_curCtrlTip] call GVAR(ewar_fnc_formatHandsetName);
+                                    if (_newTip != _curCtrlTip) then {
+                                        _ctrl ctrlSetTooltip _newTip;
+                                    };
                                 };
                             };
                         };
@@ -502,19 +518,6 @@ if (hasInterface) then {
         [
             { !isNull (findDisplay 602) },
             {
-                private _display = findDisplay 602;
-                if !(_display getVariable [QGVAR(ewar_invEhAdded), false]) then {
-                    _display setVariable [QGVAR(ewar_invEhAdded), true];
-                    _display displayAddEventHandler ["MouseMoving", {
-                        call GVAR(ewar_fnc_updateInventoryUI);
-                        false
-                    }];
-                    _display displayAddEventHandler ["MouseHolding", {
-                        call GVAR(ewar_fnc_updateInventoryUI);
-                        false
-                    }];
-                };
-
                 call GVAR(ewar_fnc_updateInventoryUI);
 
                 if (!isNil QGVAR(ewar_invPFH) && {GVAR(ewar_invPFH) != -1}) exitWith {};
@@ -524,13 +527,132 @@ if (hasInterface) then {
                         [_pfhId] call CBA_fnc_removePerFrameHandler;
                         GVAR(ewar_invPFH) = -1;
                     };
-                }, 0.1, []] call CBA_fnc_addPerFrameHandler;
+                }, 0.15, []] call CBA_fnc_addPerFrameHandler;
             },
             [],
             2
         ] call CBA_fnc_waitUntilAndExecute;
         false
     }] call CBA_fnc_addClassEventHandler;
+
+    // Local-only Zeus Jammer Visualization (Curator Map & 3D Camera in Display 312)
+    if (EGVAR(patches,usesZen)) then {
+        private _fnc_getJammerVisuals = {
+            if (isNil QGVAR(ewar_jammers) || {GVAR(ewar_jammers) isEqualTo []}) exitWith { [] };
+            private _out = [];
+            {
+                _x params ["_id", "_source", "_radius", "_coreRatio", "_sideExempt"];
+                if (_radius > 0) then {
+                    private _posATL = if (_source isEqualType objNull) then {
+                        if (isNull _source || {!alive _source}) then { [0, 0, 0] } else { getPosATL _source }
+                    } else {
+                        _source
+                    };
+                    if (_posATL isNotEqualTo [0, 0, 0]) then {
+                        private _posAGL = if (_source isEqualType objNull) then {
+                            ASLToAGL (getPosASL _source)
+                        } else {
+                            ASLToAGL (ATLToASL _source)
+                        };
+                        private _isMan = (_source isEqualType objNull) && {_source isKindOf "CAManBase"};
+                        private _isDirMan = _isMan && {((toLower (currentWeapon _source)) find "hgun_esd_01") != -1};
+                        _out pushBack [_posATL, _posAGL, _radius, _coreRatio max 0 min 0.95, _isDirMan, _source];
+                    };
+                };
+            } forEach GVAR(ewar_jammers);
+            _out
+        };
+        GVAR(ewar_fnc_getJammerVisuals) = _fnc_getJammerVisuals;
+
+        GVAR(ewar_fnc_attachZenMapDraw) = {
+            private _curatorDisp = findDisplay 312;
+            if (isNull _curatorDisp) exitWith {};
+            {
+                private _ctrl = _x;
+                if ((ctrlType _ctrl) in [100, 101] && {!(_ctrl getVariable [QGVAR(ewar_zenMapEh), false])}) then {
+                    _ctrl setVariable [QGVAR(ewar_zenMapEh), true];
+                    _ctrl ctrlAddEventHandler ["Draw", {
+                        params ["_map"];
+                        if !(EGVAR(Settings,ewar_enable)) exitWith {};
+                        {
+                            _x params ["_posATL", "", "_radius", "_coreRatio", "_isDirMan", "_source"];
+                            private _colorOuter = if (_isDirMan) then { [1.0, 0.78, 0.20, 0.85] } else { [0.28, 0.83, 0.98, 0.85] };
+                            _map drawEllipse [_posATL, _radius, _radius, 0, _colorOuter, ""];
+                            private _label = if (_isDirMan) then {
+                                format ["EWAR DIR (%1m Base)", round _radius]
+                            } else {
+                                if (_coreRatio > 0) then {
+                                    private _coreR = _radius * _coreRatio;
+                                    _map drawEllipse [_posATL, _coreR, _coreR, 0, [1.0, 0.25, 0.25, 0.85], ""];
+                                    format ["EWAR %1m (Core %2m)", round _radius, round _coreR]
+                                } else {
+                                    format ["EWAR %1m", round _radius]
+                                };
+                            };
+                            _map drawIcon ["\a3\ui_f\data\igui\cfg\simpletasks\types\radio_ca.paa", _colorOuter, _posATL, 20, 20, 0, _label, 1, 0.04, "PuristaMedium", "right"];
+                        } forEach (call GVAR(ewar_fnc_getJammerVisuals));
+                    }];
+                };
+            } forEach (allControls _curatorDisp);
+        };
+
+        addMissionEventHandler ["Draw3D", {
+            private _curatorDisp = findDisplay 312;
+            if (isNull _curatorDisp) exitWith {};
+            if !(EGVAR(Settings,ewar_enable)) exitWith {};
+
+            call GVAR(ewar_fnc_attachZenMapDraw);
+
+            if (visibleMap) exitWith {};
+            private _camPos = positionCameraToWorld [0, 0, 0];
+            private _segments = 24;
+            private _stepDeg = 360 / _segments;
+
+            {
+                _x params ["", "_posAGL", "_radius", "_coreRatio", "_isDirMan", ""];
+                if ((_camPos distance _posAGL) <= 2500) then {
+                    private _colorOuter = if (_isDirMan) then { [1.0, 0.78, 0.20, 0.80] } else { [0.28, 0.83, 0.98, 0.75] };
+                    private _label = if (_isDirMan) then {
+                        format ["EWAR DIR (%1m Base)", round _radius]
+                    } else {
+                        if (_coreRatio > 0) then {
+                            format ["EWAR %1m (Core %2m)", round _radius, round (_radius * _coreRatio)]
+                        } else {
+                            format ["EWAR %1m", round _radius]
+                        };
+                    };
+
+                    drawIcon3D ["\a3\ui_f\data\igui\cfg\simpletasks\types\radio_ca.paa", _colorOuter, _posAGL vectorAdd [0, 0, 2.0], 0.7, 0.7, 0, _label, 2, 0.032, "PuristaMedium", "center"];
+
+                    private _cx = _posAGL select 0;
+                    private _cy = _posAGL select 1;
+                    private _cz = (_posAGL select 2) + 0.5;
+                    for "_s" from 0 to (_segments - 1) do {
+                        private _a1 = _s * _stepDeg;
+                        private _a2 = (_s + 1) * _stepDeg;
+                        drawLine3D [
+                            [_cx + ((cos _a1) * _radius), _cy + ((sin _a1) * _radius), _cz],
+                            [_cx + ((cos _a2) * _radius), _cy + ((sin _a2) * _radius), _cz],
+                            _colorOuter
+                        ];
+                    };
+
+                    if (!_isDirMan && {_coreRatio > 0}) then {
+                        private _coreR = _radius * _coreRatio;
+                        for "_s" from 0 to (_segments - 1) do {
+                            private _a1 = _s * _stepDeg;
+                            private _a2 = (_s + 1) * _stepDeg;
+                            drawLine3D [
+                                [_cx + ((cos _a1) * _coreR), _cy + ((sin _a1) * _coreR), _cz],
+                                [_cx + ((cos _a2) * _coreR), _cy + ((sin _a2) * _coreR), _cz],
+                                [1.0, 0.25, 0.25, 0.85]
+                            ];
+                        };
+                    };
+                };
+            } forEach (call GVAR(ewar_fnc_getJammerVisuals));
+        }];
+    };
 
     // Register Briefing Diary Records for EWAR C-UAS System
     // Note: Arma 3 createDiaryRecord prepends records (LIFO), so we create 5 -> 4 -> 3 -> 2 -> 1
@@ -583,7 +705,7 @@ if (hasInterface) then {
             "<font size='14' color='#ffe044'>C. Fail-Safe Behaviors (Connection Severed)</font><br/>" +
             "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Rotary / Micro-UAVs (Darter, Black Hornet, Hunter, Pelican):</font> Autopilot initiates a vertical controlled auto-landing descent.<br/>" +
             "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Fixed-Wing Recon (Raven, Greyhawk, Sentinel):</font> Enters an autonomous 250m circular holding orbit at current altitude.<br/>" +
-            "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Loitering Munitions / FPVs:</font> Engine cuts immediately; falls ballistically.<br/>" +
+            "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Loitering Munitions / FPVs:</font> Engine cuts immediately; falls ballistically and detonates on ground or obstacle impact.<br/>" +
             "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Link Recovery:</font> Once the drone drifts clear of the jammer or the jammer is destroyed, friendly terminal control restores automatically."
         ]];
 
@@ -621,7 +743,7 @@ if (hasInterface) then {
             "<font color='#98a6b4'>Operating the EWAR C-UAS Handset (Spectrum Device) in combination with the EWAR Jammer Pack.</font><br/><br/>" +
 
             "<font size='14' color='#ffe044'>A. The Hunter-Killer Concept</font><br/>" +
-            "Drawing the <font color='#48f060'>EWAR C-UAS Handset</font> / Contact DLC Spectrum Device (<font face='EtelkaMonospacePro'>hgun_esd_01_F</font>) while wearing any <font color='#48f060'>EWAR Jammer Pack</font> (<font face='EtelkaMonospacePro'>B_RadioBag_01_*</font>) connects the transmitter into a high-powered, focused directional jammer.<br/><br/>" +
+            "Drawing the <font color='#48f060'>EWAR C-UAS Handset</font> / Contact DLC Spectrum Device (<font face='EtelkaMonospacePro'>hgun_esd_01_F</font>) while wearing any <font color='#48f060'>EWAR Jammer Pack</font> (<font face='EtelkaMonospacePro'>B_RadioBag_01_*</font>) redirects backpack transmitter power from the 200m omni bubble into a high-powered, focused directional jammer.<br/><br/>" +
 
             "<font size='14' color='#ffe044'>B. Physical Antennas &amp; Beam Modes</font><br/>" +
             "Cycle antenna modes with <font face='EtelkaMonospacePro' color='#ffffff'>[ PAGE UP ]</font> / <font face='EtelkaMonospacePro' color='#ffffff'>[ PAGE DOWN ]</font> or via ACE Self-Interaction (plays a 2-second reload animation to swap the 3D muzzle antenna):<br/>" +

@@ -21,6 +21,9 @@ if (isNull _uav || {!local _uav}) exitWith {};
 
 private _origSide = _uav getVariable [QGVAR(ewar_originalSide), sideUnknown];
 if (_origSide == sideUnknown) exitWith {
+    _uav setVariable [QGVAR(ewar_isFailsafeActive), nil, true];
+    _uav setVariable [QGVAR(ewar_burnIntensity), nil, true];
+    _uav setVariable [QGVAR(ewar_burnOperator), nil, true];
     [QGVAR(ewar_unregisterJammedDrone), [_uav]] call CBA_fnc_serverEvent;
 };
 
@@ -35,12 +38,18 @@ if (_crew isNotEqualTo []) then {
         _uav setVariable [QGVAR(ewar_originalGroup), _newGrp, true];
     };
 
-    // Re-enable autonomy if it was disabled during failsafe
-    if (_uav isKindOf "Plane") then {
+    // Restore flight state & autonomy if modified during failsafe
+    if (_uav isKindOf "Helicopter") then {
+        _uav land "NONE";
+    };
+    if ((_uav isKindOf "Plane") || {_uav isKindOf "LandVehicle"} || {_uav isKindOf "Ship"}) then {
         _uav setAutonomous true;
     };
 };
 
+_uav setVariable [QGVAR(ewar_isFailsafeActive), nil, true];
+_uav setVariable [QGVAR(ewar_burnIntensity), nil, true];
+_uav setVariable [QGVAR(ewar_burnOperator), nil, true];
 _uav setVariable [QGVAR(ewar_originalSide), nil, true];
 _uav setVariable [QGVAR(ewar_originalGroup), nil, true];
 
