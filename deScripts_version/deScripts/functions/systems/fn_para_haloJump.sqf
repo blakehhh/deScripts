@@ -19,7 +19,8 @@ params [
     ["_player", objNull, [objNull]],
     ["_vehicle", objNull, [objNull]],
     ["_chuteBackpackClass", "B_Parachute"],
-    ["_allowStaggared", false, [false]]
+    ["_allowStaggared", false, [false]],
+    ["_jumpSimMode", EGVAR(Settings,jumpSimulation), [0]]
 ];
 
 private _offset = if (_allowStaggared) then {
@@ -48,7 +49,7 @@ _player setDir _dir - 140;
 
 sleep 1.5;
 
-[_player, true] call EFUNC(para,equipment);
+[_player, true, _jumpSimMode] call EFUNC(para,equipment);
 
 sleep 0.5;
 

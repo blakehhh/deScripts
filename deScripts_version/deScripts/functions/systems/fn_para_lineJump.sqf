@@ -19,7 +19,8 @@ params [
     ["_player", objNull, [objNull]],
     ["_vehicle", objNull, [objNull]],
     ["_chuteVehicleClass", "NonSteerable_Parachute_F"],
-    ["_allowStaggared", false, [false]]
+    ["_allowStaggared", false, [false]],
+    ["_jumpSimMode", EGVAR(Settings,jumpSimulation), [0]]
 ];
 
 private _offset = if (_allowStaggared) then {
@@ -54,7 +55,7 @@ detach _chute;
 _player moveInDriver _chute;
 _chute setVelocity _velocity;
 
-[_player] call EFUNC(para,equipment);
+[_player, false, _jumpSimMode] call EFUNC(para,equipment);
 
 sleep 0.5;
 

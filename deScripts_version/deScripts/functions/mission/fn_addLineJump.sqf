@@ -25,7 +25,8 @@ params [
     ["_maxAltetude", 350, [350]],
     ["_maxSpeed", 310, [310]],
     ["_chuteVehicleClass", "NonSteerable_Parachute_F", [""]],
-    ["_allowStaggared", false, [false]]
+    ["_allowStaggared", false, [false]],
+    ["_jumpSimMode", EGVAR(Settings,jumpSimulation), [0]]
 ];
 
 // Check so the options arent added twice.
@@ -64,14 +65,14 @@ private _actionID = [
     {},
     {
         params ["_target", "_caller", "_actionId", "_arguments"];
-        _arguments params ["_chuteVehicleClass", "_allowStaggared"];
-        [_caller, _target, _chuteVehicleClass, _allowStaggared] call EFUNC(para,lineJump)
+        _arguments params ["_chuteVehicleClass", "_allowStaggared", "_jumpSimMode"];
+        [_caller, _target, _chuteVehicleClass, _allowStaggared, _jumpSimMode] call EFUNC(para,lineJump)
     },
     {},
-    [_chuteVehicleClass, _allowStaggared],
+    [_chuteVehicleClass, _allowStaggared, _jumpSimMode],
     0,
     25,
     false
 ] call BIS_fnc_holdActionAdd;
 
-_vehicle setVariable [QEGVAR(VehicleFunc,JumpAction), [_vehicle, _actionID, _minAltetude, _maxAltetude, _maxSpeed, _chuteVehicleClass, _allowStaggared]];
+_vehicle setVariable [QEGVAR(VehicleFunc,JumpAction), [_vehicle, _actionID, _minAltetude, _maxAltetude, _maxSpeed, _chuteVehicleClass, _allowStaggared, _jumpSimMode]];

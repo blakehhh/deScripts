@@ -20,7 +20,8 @@ params [
     ["_vehicle", objNull, [objNull]],
     ["_minAltetude", 5000, [5000]],
     ["_chuteBackpackClass", "B_Parachute", ["B_Parachute"]],
-    ["_allowStaggared", false, [false]]
+    ["_allowStaggared", false, [false]],
+    ["_jumpSimMode", EGVAR(Settings,jumpSimulation), [0]]
 ];
 
 // Check so the options arent added twice.
@@ -59,14 +60,14 @@ private _actionID = [
     {},
     {
         params ["_target", "_caller", "_actionId", "_arguments"];
-        _arguments params ["_chuteBackpackClass", "_allowStaggared"];
-        [_caller, _target, _chuteBackpackClass, _allowStaggared] call EFUNC(para,haloJump)
+        _arguments params ["_chuteBackpackClass", "_allowStaggared", "_jumpSimMode"];
+        [_caller, _target, _chuteBackpackClass, _allowStaggared, _jumpSimMode] call EFUNC(para,haloJump)
     },
     {},
-    [_chuteBackpackClass, _allowStaggared],
+    [_chuteBackpackClass, _allowStaggared, _jumpSimMode],
     0,
     25,
     false
 ] call BIS_fnc_holdActionAdd;
 
-_vehicle setVariable [QEGVAR(VehicleFunc,HaloAction), [_vehicle, _actionID, _minAltetude, _chuteBackpackClass, _allowStaggared]];
+_vehicle setVariable [QEGVAR(VehicleFunc,HaloAction), [_vehicle, _actionID, _minAltetude, _chuteBackpackClass, _allowStaggared, _jumpSimMode]];

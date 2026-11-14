@@ -88,18 +88,19 @@ INFO("init", "Initializing custom Zen Modules.");
             [
                 ["SLIDER", ["Minimum Altitude (m)", "Minimum aircraft altitude (AGL) required to use the HALO Jump action"], [0, 10000, 5000, 0], false],
                 ["COMBO", ["Parachute Backpack", "Parachute backpack equipped on jump (current backpack is stowed to chest)"], [["B_Parachute"], ["Steerable Parachute (B_Parachute)"], 0], false],
-                ["CHECKBOX", ["Staggered Jump Exit", "Alternates jumpers between left (+12m) and right (-12m) rear exit offsets"], false, false]
+                ["CHECKBOX", ["Staggered Jump Exit", "Alternates jumpers between left (+12m) and right (-12m) rear exit offsets"], false, false],
+                ["COMBO", ["Jump Gear Loss Simulation", "Whether non-combat hats, glasses, or NVGs can come loose on jump"], [[0, 1, 2], ["None (Default - Keep All Gear)", "Basic (Unassign to Inventory)", "Advanced (Permanently Lost)"], 0], false]
             ],
             {
                 params ["_dialogValues", "_args"];
-                _dialogValues params ["_minAltitude", "_chuteBackpackClass", "_allowStaggered"];
+                _dialogValues params ["_minAltitude", "_chuteBackpackClass", "_allowStaggered", "_jumpSimMode"];
                 _args params ["_vehicle"];
                 if (isNull _vehicle || {!alive _vehicle}) exitWith {};
                 if (!isNil {_vehicle getVariable QEGVAR(VehicleFunc,HaloAction)}) exitWith {
                     ["HALO Jump action is already applied to this aircraft"] call zen_common_fnc_showMessage;
                 };
 
-                [_vehicle, round _minAltitude, _chuteBackpackClass, _allowStaggered] remoteExec [QFUNC(addHaloJump), 0, _vehicle];
+                [_vehicle, round _minAltitude, _chuteBackpackClass, _allowStaggered, _jumpSimMode] remoteExec [QFUNC(addHaloJump), 0, _vehicle];
                 [format ["Added HALO Jump (Min Alt: %1m) to %2", round _minAltitude, getText (configFile >> "CfgVehicles" >> typeOf _vehicle >> "displayName")]] call zen_common_fnc_showMessage;
             },
             {},
@@ -126,11 +127,12 @@ INFO("init", "Initializing custom Zen Modules.");
                 ["SLIDER", ["Maximum Altitude (m)", "Highest altitude (AGL) where the Static Line Jump action is available"], [100, 5000, 350, 0], false],
                 ["SLIDER", ["Maximum Speed (km/h)", "Maximum aircraft speed (km/h) allowed for static-line exit"], [100, 800, 310, 0], false],
                 ["COMBO", ["Parachute Type", "Deployed parachute vehicle class attached automatically after exit"], [["NonSteerable_Parachute_F", "Steerable_Parachute_F"], ["Non-Steerable T-10 (Default)", "Steerable Canopy"], 0], false],
-                ["CHECKBOX", ["Staggered Jump Exit", "Alternates jumpers between left (+12m) and right (-12m) rear exit offsets"], false, false]
+                ["CHECKBOX", ["Staggered Jump Exit", "Alternates jumpers between left (+12m) and right (-12m) rear exit offsets"], false, false],
+                ["COMBO", ["Jump Gear Loss Simulation", "Whether non-combat hats, glasses, or NVGs can come loose on jump"], [[0, 1, 2], ["None (Default - Keep All Gear)", "Basic (Unassign to Inventory)", "Advanced (Permanently Lost)"], 0], false]
             ],
             {
                 params ["_dialogValues", "_args"];
-                _dialogValues params ["_minAltitude", "_maxAltitude", "_maxSpeed", "_chuteVehicleClass", "_allowStaggered"];
+                _dialogValues params ["_minAltitude", "_maxAltitude", "_maxSpeed", "_chuteVehicleClass", "_allowStaggered", "_jumpSimMode"];
                 _args params ["_vehicle"];
                 if (isNull _vehicle || {!alive _vehicle}) exitWith {};
                 if (!isNil {_vehicle getVariable QEGVAR(VehicleFunc,JumpAction)}) exitWith {
@@ -141,7 +143,7 @@ INFO("init", "Initializing custom Zen Modules.");
                 private _maxAlt = (round _maxAltitude) max _minAlt;
                 private _spd = round _maxSpeed;
 
-                [_vehicle, _minAlt, _maxAlt, _spd, _chuteVehicleClass, _allowStaggered] remoteExec [QFUNC(addLineJump), 0, _vehicle];
+                [_vehicle, _minAlt, _maxAlt, _spd, _chuteVehicleClass, _allowStaggered, _jumpSimMode] remoteExec [QFUNC(addLineJump), 0, _vehicle];
                 [format ["Added Static Line Jump (%1m-%2m, <=%3 km/h) to %4", _minAlt, _maxAlt, _spd, getText (configFile >> "CfgVehicles" >> typeOf _vehicle >> "displayName")]] call zen_common_fnc_showMessage;
             },
             {},
