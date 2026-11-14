@@ -154,7 +154,7 @@ INFO("init", "Initializing custom Zen Modules.");
             [
                 [
                     "COMBO",
-                    ["Radio Pack Camo", "Select Radio Pack variant to equip on the unit"],
+                    ["Jammer Pack Camo", "Select EWAR Jammer Pack variant to equip on the unit"],
                     [
                         [
                             "B_RadioBag_01_mtp_F",
@@ -168,15 +168,15 @@ INFO("init", "Initializing custom Zen Modules.");
                             "B_RadioBag_01_oucamo_F"
                         ],
                         [
-                            "Radio Pack (MTP)",
-                            "Radio Pack (Woodland)",
-                            "Radio Pack (Tropic)",
-                            "Radio Pack (Black)",
-                            "Radio Pack (Hex)",
-                            "Radio Pack (Green Hex)",
-                            "Radio Pack (AAF Digital)",
-                            "Radio Pack (LDF Geometric)",
-                            "Radio Pack (Urban)"
+                            "EWAR Jammer Pack (MTP)",
+                            "EWAR Jammer Pack (Woodland)",
+                            "EWAR Jammer Pack (Tropic)",
+                            "EWAR Jammer Pack (Black)",
+                            "EWAR Jammer Pack (Hex)",
+                            "EWAR Jammer Pack (Green Hex)",
+                            "EWAR Jammer Pack (AAF Digital)",
+                            "EWAR Jammer Pack (LDF Geometric)",
+                            "EWAR Jammer Pack (Urban)"
                         ],
                         _defaultBagIdx
                     ],

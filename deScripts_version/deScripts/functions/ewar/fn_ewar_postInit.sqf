@@ -28,6 +28,30 @@ if (isServer) then {
 
 // Start client-side operator loop and ACE self-interactions only if local player interface exists
 if (hasInterface) then {
+    // Helper to convert "Radio Pack (MTP)" -> "EWAR Jammer Pack (MTP)"
+    GVAR(ewar_fnc_formatBagName) = {
+        params ["_rawName"];
+        if (_rawName == "") exitWith { "EWAR Jammer Pack" };
+        if ((_rawName find "EWAR Jammer Pack") != -1) exitWith { _rawName };
+        private _idx = _rawName find "Radio Pack";
+        if (_idx != -1) exitWith {
+            (_rawName select [0, _idx]) + "EWAR Jammer Pack" + (_rawName select [_idx + 10])
+        };
+        format ["EWAR Jammer Pack (%1)", _rawName]
+    };
+
+    // Helper to convert "Spectrum Device" -> "EWAR C-UAS Handset" while preserving any suffixes
+    GVAR(ewar_fnc_formatHandsetName) = {
+        params ["_rawName"];
+        if (_rawName == "") exitWith { "EWAR C-UAS Handset" };
+        if ((_rawName find "EWAR C-UAS Handset") != -1) exitWith { _rawName };
+        private _idx = _rawName find "Spectrum Device";
+        if (_idx != -1) exitWith {
+            (_rawName select [0, _idx]) + "EWAR C-UAS Handset" + (_rawName select [_idx + 15])
+        };
+        "EWAR C-UAS Handset"
+    };
+
     [{
         call FUNC(ewar_clientLoop);
     }, 0.5, []] call CBA_fnc_addPerFrameHandler;
@@ -197,6 +221,123 @@ if (hasInterface) then {
         ["CAManBase", 1, _beamParentPath, _beamWideAction, true] call ace_interact_menu_fnc_addActionToClass;
         ["CAManBase", 1, _beamParentPath, _beamFocusedAction, true] call ace_interact_menu_fnc_addActionToClass;
         ["CAManBase", 1, _beamParentPath, _beamSpotAction, true] call ace_interact_menu_fnc_addActionToClass;
+
+        // Dynamically rename B_RadioBag_01_* ("EWAR Jammer Pack (...)") and hgun_esd_01_* ("EWAR C-UAS Handset") in ACE Arsenal
+        ["ace_arsenal_leftPanelFilled", {
+            params ["_display", "_leftPanelIDC", "_rightPanelIDC"];
+            if !(EGVAR(Settings,ewar_enable)) exitWith {};
+            if (isNull _display) exitWith {};
+
+            {
+                private _ctrl = _x;
+                private _count = lbSize _ctrl;
+                for "_i" from 0 to (_count - 1) do {
+                    private _data = toLower (_ctrl lbData _i);
+                    if ((_data find "b_radiobag_01") != -1) then {
+                        private _curText = _ctrl lbText _i;
+                        private _newText = [_curText] call GVAR(ewar_fnc_formatBagName);
+                        if (_newText != _curText) then {
+                            _ctrl lbSetText [_i, _newText];
+                            _ctrl lbSetTooltip [_i, format ["%1\nMan-Portable C-UAS Jammer & Directional Transmitter Pack", _newText]];
+                        };
+                    } else {
+                        if ((_data find "hgun_esd_01") != -1) then {
+                            private _curText = _ctrl lbText _i;
+                            private _newText = "EWAR C-UAS Handset";
+                            if (_curText != _newText) then {
+                                _ctrl lbSetText [_i, _newText];
+                                _ctrl lbSetTooltip [_i, "EWAR C-UAS Handset\nDirectional RF Scanner & C-UAS Jammer Transmitter (Requires EWAR Jammer Pack for active jamming)"];
+                            };
+                        };
+                    };
+                };
+            } forEach (allControls _display select { ctrlType _x == 5 && {lbSize _x > 0} });
+        }] call CBA_fnc_addEventHandler;
+
+        // Register custom EWAR stats on ACE Arsenal Backpacks tab (Left Tab 5) and Handgun tab (Left Tab 1)
+        if (!isNil "ace_arsenal_fnc_addStat") then {
+            [
+                [[5], []],
+                QGVAR(ewar_statOmni),
+                [],
+                "EWAR Omni Jammer",
+                [false, true],
+                [
+                    {},
+                    {
+                        private _radius = round (EGVAR(Settings,ewar_backpackRadius));
+                        private _core = round (_radius * (EGVAR(Settings,ewar_backpackCoreRatio)));
+                        format ["%1m Bubble (%2m Kill Core)", _radius, _core]
+                    },
+                    {
+                        params ["_statsArray", "_itemCfg"];
+                        EGVAR(Settings,ewar_enable) && {((toLower (configName _itemCfg)) find "b_radiobag_01") != -1}
+                    }
+                ],
+                10
+            ] call ace_arsenal_fnc_addStat;
+
+            [
+                [[5], []],
+                QGVAR(ewar_statBattery),
+                [],
+                "EWAR Battery Runtime",
+                [false, true],
+                [
+                    {},
+                    {
+                        if !(EGVAR(Settings,ewar_backpackRequiresBattery)) exitWith {
+                            "Unlimited (No Battery Req.)"
+                        };
+                        private _mins = round (((EGVAR(Settings,ewar_backpackBatteryLife)) / 60) * 10) / 10;
+                        format ["%1 min (Omni) | UAV Battery", _mins]
+                    },
+                    {
+                        params ["_statsArray", "_itemCfg"];
+                        EGVAR(Settings,ewar_enable) && {((toLower (configName _itemCfg)) find "b_radiobag_01") != -1}
+                    }
+                ],
+                9
+            ] call ace_arsenal_fnc_addStat;
+
+            [
+                [[1], []],
+                QGVAR(ewar_statHandsetModes),
+                [],
+                "EWAR Directional Modes",
+                [false, true],
+                [
+                    {},
+                    {
+                        "45° (600m) | 20° (1000m) | 10° (1500m)"
+                    },
+                    {
+                        params ["_statsArray", "_itemCfg"];
+                        EGVAR(Settings,ewar_enable) && {((toLower (configName _itemCfg)) find "hgun_esd_01") != -1}
+                    }
+                ],
+                10
+            ] call ace_arsenal_fnc_addStat;
+
+            [
+                [[1], []],
+                QGVAR(ewar_statHandsetOp),
+                [],
+                "EWAR Operation",
+                [false, true],
+                [
+                    {},
+                    {
+                        "Passive Scan (0% Drain) | Active Dir. Lock (w/ Pack)"
+                    },
+                    {
+                        params ["_statsArray", "_itemCfg"];
+                        EGVAR(Settings,ewar_enable) && {((toLower (configName _itemCfg)) find "hgun_esd_01") != -1}
+                    }
+                ],
+                9
+            ] call ace_arsenal_fnc_addStat;
+        };
     };
 
     // Register CBA Keybinds for PageUp (0xC9) and PageDown (0xD1) when holding Spectrum Device
@@ -242,6 +383,155 @@ if (hasInterface) then {
         [0xD1, [false, false, false]]
     ] call CBA_fnc_addKeybind;
 
+    // Helper to update Vanilla Inventory UI (IDD 602) Ground/Container row labels
+    GVAR(ewar_fnc_updateInventoryUI) = {
+        if !(EGVAR(Settings,ewar_enable)) exitWith { false };
+        private _display = findDisplay 602;
+        if (isNull _display) exitWith { false };
+
+        private _bpClass = backpack player;
+        private _hasEwarBag = ((toLower _bpClass) find "b_radiobag_01") != -1;
+        private _hgClass = handgunWeapon player;
+        private _hasEwarHg = ((toLower _hgClass) find "hgun_esd_01") != -1;
+
+        {
+            private _ctrl = _x;
+            if (ctrlType _ctrl == 5) then {
+                private _count = lbSize _ctrl;
+                for "_i" from 0 to (_count - 1) do {
+                    private _curText = _ctrl lbText _i;
+                    private _data = toLower (_ctrl lbData _i);
+
+                    if (((_data find "b_radiobag_01") != -1) || {(_curText find "Radio Pack") != -1}) then {
+                        private _newText = [_curText] call GVAR(ewar_fnc_formatBagName);
+                        if (_newText != _curText) then {
+                            _ctrl lbSetText [_i, _newText];
+                        };
+                    } else {
+                        if (((_data find "hgun_esd_01") != -1) || {(_curText find "Spectrum Device") != -1}) then {
+                            private _newText = [_curText] call GVAR(ewar_fnc_formatHandsetName);
+                            if (_newText != _curText) then {
+                                _ctrl lbSetText [_i, _newText];
+                            };
+                        };
+                    };
+
+                    private _curTip = _ctrl lbTooltip _i;
+                    if (_curTip != "") then {
+                        if ((_curTip find "Radio Pack") != -1) then {
+                            private _newTip = [_curTip] call GVAR(ewar_fnc_formatBagName);
+                            if (_newTip != _curTip) then {
+                                _ctrl lbSetTooltip [_i, _newTip];
+                            };
+                        } else {
+                            if ((_curTip find "Spectrum Device") != -1) then {
+                                private _newTip = [_curTip] call GVAR(ewar_fnc_formatHandsetName);
+                                if (_newTip != _curTip) then {
+                                    _ctrl lbSetTooltip [_i, _newTip];
+                                };
+                            };
+                        };
+                    } else {
+                        private _rowText = _ctrl lbText _i;
+                        if (((_rowText find "EWAR Jammer Pack") != -1) || {(_rowText find "EWAR C-UAS Handset") != -1}) then {
+                            _ctrl lbSetTooltip [_i, _rowText];
+                        };
+                    };
+                };
+            } else {
+                private _ctrlTxt = ctrlText _ctrl;
+                if (_ctrlTxt != "") then {
+                    if ((_ctrlTxt find "Radio Pack") != -1) then {
+                        _ctrl ctrlSetText ([_ctrlTxt] call GVAR(ewar_fnc_formatBagName));
+                    } else {
+                        if ((_ctrlTxt find "Spectrum Device") != -1) then {
+                            _ctrl ctrlSetText ([_ctrlTxt] call GVAR(ewar_fnc_formatHandsetName));
+                        };
+                    };
+                };
+
+                private _idc = ctrlIDC _ctrl;
+                private _ctrlTxtLower = toLower _ctrlTxt;
+                private _isBpSlot = (_idc in [6191, 6305, 1246]) || {(_ctrlTxtLower find "b_radiobag_01") != -1};
+                private _isHgSlot = (_idc in [612, 1244]) || {(_ctrlTxtLower find "esd_01") != -1};
+
+                if (_isBpSlot && {_hasEwarBag}) then {
+                    private _cfgName = getText (configFile >> "CfgVehicles" >> _bpClass >> "displayName");
+                    private _ewarName = [_cfgName] call GVAR(ewar_fnc_formatBagName);
+                    _ctrl ctrlSetTooltip format ["%1 (%2 Items)", _ewarName, count (backpackItems player)];
+                } else {
+                    if (_isHgSlot && {_hasEwarHg}) then {
+                        private _lines = ["EWAR C-UAS Handset"];
+                        private _accNames = [];
+                        {
+                            if (_x != "") then {
+                                private _accName = getText (configFile >> "CfgWeapons" >> _x >> "displayName");
+                                if (_accName != "") then { _accNames pushBack _accName; };
+                            };
+                        } forEach (handgunItems player);
+                        if (_accNames isNotEqualTo []) then {
+                            _lines pushBack "Accessories:";
+                            _lines append _accNames;
+                        };
+                        _ctrl ctrlSetTooltip (_lines joinString endl);
+                    } else {
+                        private _ctrlTip = ctrlTooltip _ctrl;
+                        if (_ctrlTip != "") then {
+                            if ((_ctrlTip find "Radio Pack") != -1) then {
+                                _ctrl ctrlSetTooltip ([_ctrlTip] call GVAR(ewar_fnc_formatBagName));
+                            } else {
+                                if ((_ctrlTip find "Spectrum Device") != -1) then {
+                                    _ctrl ctrlSetTooltip ([_ctrlTip] call GVAR(ewar_fnc_formatHandsetName));
+                                };
+                            };
+                        };
+                    };
+                };
+            };
+        } forEach (allControls _display);
+
+        true
+    };
+
+    // Dynamically rename B_RadioBag_01_* and hgun_esd_01_* in Vanilla Inventory (IDD 602)
+    ["CAManBase", "InventoryOpened", {
+        params ["_unit"];
+        if (_unit != player) exitWith { false };
+        if !(EGVAR(Settings,ewar_enable)) exitWith { false };
+
+        [
+            { !isNull (findDisplay 602) },
+            {
+                private _display = findDisplay 602;
+                if !(_display getVariable [QGVAR(ewar_invEhAdded), false]) then {
+                    _display setVariable [QGVAR(ewar_invEhAdded), true];
+                    _display displayAddEventHandler ["MouseMoving", {
+                        call GVAR(ewar_fnc_updateInventoryUI);
+                        false
+                    }];
+                    _display displayAddEventHandler ["MouseHolding", {
+                        call GVAR(ewar_fnc_updateInventoryUI);
+                        false
+                    }];
+                };
+
+                call GVAR(ewar_fnc_updateInventoryUI);
+
+                if (!isNil QGVAR(ewar_invPFH) && {GVAR(ewar_invPFH) != -1}) exitWith {};
+                GVAR(ewar_invPFH) = [{
+                    params ["_args", "_pfhId"];
+                    if !(call GVAR(ewar_fnc_updateInventoryUI)) then {
+                        [_pfhId] call CBA_fnc_removePerFrameHandler;
+                        GVAR(ewar_invPFH) = -1;
+                    };
+                }, 0.1, []] call CBA_fnc_addPerFrameHandler;
+            },
+            [],
+            2
+        ] call CBA_fnc_waitUntilAndExecute;
+        false
+    }] call CBA_fnc_addClassEventHandler;
+
     // Register Briefing Diary Records for EWAR C-UAS System
     // Note: Arma 3 createDiaryRecord prepends records (LIFO), so we create 5 -> 4 -> 3 -> 2 -> 1
     // to have them displayed chronologically (1. Quick Start, 2. Directional Hunter, 3. Threat Signatures, 4. Pilot, 5. Zeus) in the UI.
@@ -260,7 +550,7 @@ if (hasInterface) then {
             "Located under category <font color='#68d4f8'>TFG EWAR</font> in the Zeus context menu:<br/>" +
             "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Create Jammer Area:</font> Places a static jammer bubble at the cursor with configurable radius (50m-1500m), core cut ratio, and side exemption.<br/>" +
             "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Attach Jammer to Object:</font> Attaches a mobile/destructible jammer bubble to any vehicle, antenna mast, or radar structure.<br/>" +
-            "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Equip Jammer Backpack (AI):</font> Equips an AI soldier with a faction Radio Pack that jams until death (no batteries required).<br/>" +
+            "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Equip Jammer Backpack (AI):</font> Equips an AI soldier with a faction EWAR Jammer Pack (<font face='EtelkaMonospacePro'>B_RadioBag_01_*</font>) that jams until death (no batteries required).<br/>" +
             "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Remove Nearby Jammers:</font> Removes jammers from clicked objects or clears static jammer bubbles within 100m.<br/><br/>" +
 
             "<font size='14' color='#ffe044'>B. Mission Init Scripting API</font><br/>" +
@@ -321,17 +611,17 @@ if (hasInterface) then {
             "<font size='14' color='#ffe044'>D. Hostile Electronic Warfare Jammers</font><br/>" +
             "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Waveform:</font> Wide 14 MHz <font color='#ff4444'>Boiling Noise Wall</font> spanning across the analyzer display.<br/>" +
             "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Behavior:</font> High continuous amplitude; turbulent boiling noise floor.<br/>" +
-            "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Tactical Action:</font> Use the Spectrum Device's compass tape and azimuth readout to take multi-point triangulation bearings on the hostile EW site."
+            "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Tactical Action:</font> Use the EWAR C-UAS Handset's compass tape and azimuth readout to take multi-point triangulation bearings on the hostile EW site."
         ]];
 
         // 2. Directional Hunter & Antennas Guide
         player createDiaryRecord ["deScripts_ewar", [
             "2. Directional Hunter & Antennas Guide",
             "<font size='16' color='#68d4f8'>DIRECTIONAL HUNTER &amp; ANTENNAS</font><br/>" +
-            "<font color='#98a6b4'>Operating the Spectrum Device in combination with the Radio Pack.</font><br/><br/>" +
+            "<font color='#98a6b4'>Operating the EWAR C-UAS Handset (Spectrum Device) in combination with the EWAR Jammer Pack.</font><br/><br/>" +
 
             "<font size='14' color='#ffe044'>A. The Hunter-Killer Concept</font><br/>" +
-            "Drawing the Contact DLC <font color='#e0f4e0'>Spectrum Device</font> (<font face='EtelkaMonospacePro'>hgun_esd_01_F</font>) while wearing any Radio Pack backpack connects the transmitter into a high-powered, focused directional jammer.<br/><br/>" +
+            "Drawing the <font color='#48f060'>EWAR C-UAS Handset</font> / Contact DLC Spectrum Device (<font face='EtelkaMonospacePro'>hgun_esd_01_F</font>) while wearing any <font color='#48f060'>EWAR Jammer Pack</font> (<font face='EtelkaMonospacePro'>B_RadioBag_01_*</font>) connects the transmitter into a high-powered, focused directional jammer.<br/><br/>" +
 
             "<font size='14' color='#ffe044'>B. Physical Antennas &amp; Beam Modes</font><br/>" +
             "Cycle antenna modes with <font face='EtelkaMonospacePro' color='#ffffff'>[ PAGE UP ]</font> / <font face='EtelkaMonospacePro' color='#ffffff'>[ PAGE DOWN ]</font> or via ACE Self-Interaction (plays a 2-second reload animation to swap the 3D muzzle antenna):<br/>" +
@@ -359,14 +649,14 @@ if (hasInterface) then {
             "<font color='#98a6b4'>Basic setup, controls, battery power, and RCU Mini-HUD reference.</font><br/><br/>" +
 
             "<font size='14' color='#ffe044'>A. Required Equipment</font><br/>" +
-            "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Backpack Jammer:</font> Any Radio Pack backpack (<font face='EtelkaMonospacePro'>B_RadioBag_01_*</font>).<br/>" +
-            "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Directional Scanner:</font> Contact DLC Spectrum Device (<font face='EtelkaMonospacePro'>hgun_esd_01_F</font>).<br/>" +
+            "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Backpack Jammer:</font> Any <font color='#48f060'>EWAR Jammer Pack</font> / Radio Pack backpack (<font face='EtelkaMonospacePro'>B_RadioBag_01_*</font>).<br/>" +
+            "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Directional Scanner:</font> <font color='#48f060'>EWAR C-UAS Handset</font> / Spectrum Device (<font face='EtelkaMonospacePro'>hgun_esd_01_F</font>).<br/>" +
             "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Power Supply:</font> Standard UAV Batteries (<font face='EtelkaMonospacePro'>GX_UAVBattery</font> or <font face='EtelkaMonospacePro'>ACE_UAVBattery</font>).<br/><br/>" +
 
             "<font size='14' color='#ffe044'>B. Quick Controls</font><br/>" +
             "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Toggle Jammer:</font> <font color='#68d4f8'>ACE Self-Interaction</font> ➔ <font color='#ffe044'>Equipment</font> ➔ <font color='#48f060'>EWAR Jammer</font>.<br/>" +
             "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Change Antenna / Beam Focus:</font> Press <font face='EtelkaMonospacePro' color='#ffffff'>[ PAGE UP ]</font> to narrow focus (longer range) or <font face='EtelkaMonospacePro' color='#ffffff'>[ PAGE DOWN ]</font> to widen.<br/>" +
-            "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Momentary Burst:</font> With Spectrum Device drawn, hold <font face='EtelkaMonospacePro' color='#ffffff'>[ LEFT CLICK ]</font>.<br/>" +
+            "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Momentary Burst:</font> With EWAR C-UAS Handset drawn, hold <font face='EtelkaMonospacePro' color='#ffffff'>[ LEFT CLICK ]</font>.<br/>" +
             "<font color='#68d4f8'>▪</font> <font color='#e0f4e0'>Replace Battery:</font> ACE Self-Interaction &gt; Equipment &gt; EWAR Jammer &gt; Replace Battery (4s progress bar).<br/><br/>" +
 
             "<font size='14' color='#ffe044'>C. Backpack Jammer Coverage &amp; Battery Life</font><br/>" +

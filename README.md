@@ -539,7 +539,7 @@ Modules registered into the ZEN (Zeus Enhanced) interface for Game Masters durin
 | `TFG Mission` | Take Attendance | Dumps attendance logs of all connected players to the Zeus operator's RPT log. |
 | `TFG EWAR` | Create Jammer Area | Prompts Zeus for outer radius (50m–1500m), inner hard-cut core ratio (0–0.9), and faction exemptions; places a static jamming bubble at the clicked position. |
 | `TFG EWAR` | Attach Jammer to Object | Attaches a mobile or destructible jammer bubble to a clicked vehicle or object (automatically ceases jamming if the object is destroyed). |
-| `TFG EWAR` | Equip Jammer Backpack (AI) | Equips a faction-appropriate `B_RadioBag_01_*` backpack onto a clicked AI soldier and enables an EWAR jammer bubble until the unit's death. |
+| `TFG EWAR` | Equip Jammer Backpack (AI) | Equips a faction-appropriate `B_RadioBag_01_*` ("EWAR Jammer Pack") onto a clicked AI soldier and enables an EWAR jammer bubble until the unit's death. |
 | `TFG EWAR` | Remove Nearby Jammers | Removes a jammer directly from a clicked object or clears all active jammers within 100m of the cursor. |
 
 ---
@@ -549,12 +549,15 @@ Modules registered into the ZEN (Zeus Enhanced) interface for Game Masters durin
 The EWAR subsystem models counter-UAS (C-UAS) electronic jamming fields and man-portable jammer backpacks (`B_RadioBag_01_*`). The monitoring routine runs strictly **client-side** on players, ensuring near-zero server overhead.
 
 ### Operational Modes, Variable Beam Focus & Native KAISERKOM LCD Display
+* **UI Identification (ACE Arsenal & Vanilla Inventory):**
+  * All `B_RadioBag_01_*` backpacks are dynamically renamed to **`EWAR Jammer Pack (...)`** in both **ACE Arsenal** (including custom `EWAR Omni Jammer` and `EWAR Battery Runtime` stat cards on the Backpacks tab) and **Vanilla Inventory** (equipped backpack slot tooltip with live `[EWAR: ACTIVE/STANDBY | Battery: xx%]` status, plus ground and container listboxes).
+  * The Contact DLC Spectrum Device (`hgun_esd_01_F`) is dynamically renamed to **`EWAR C-UAS Handset`** in both **ACE Arsenal** (with `EWAR Directional Modes` and `EWAR Operation` stat cards on the Handgun tab) and **Vanilla Inventory** (equipped sidearm title bar, tooltip, and container listboxes).
 * **Omni-Directional Mode (Backpack only):**
-  * When wearing any `B_RadioBag_01_*` Radio Pack and holding a standard weapon or empty hands, the jammer emits an omnidirectional spherical bubble (**200m outer radius**, **75m hard kill core** at default `0.375` ratio).
+  * When wearing any `B_RadioBag_01_*` EWAR Jammer Pack and holding a standard weapon or empty hands, the jammer emits an omnidirectional spherical bubble (**200m outer radius**, **75m hard kill core** at default `0.375` ratio).
   * Battery draws at standard power rate (**45 minutes** continuous operation on a single UAV battery).
   * Slim vertical RCU Mini-HUD displays `RF: 200m OMNI`, `TX ON` / `STBY`, and a 4-segment semiotic battery gauge.
-* **Directional Hunter Combo (Backpack + Spectrum Device `hgun_esd_01_F`):**
-  * When drawing and holding the Contact DLC **Spectrum Device** (`hgun_esd_01_F`), RF power is focused through the handheld antenna into a forward **3D conical beam** aligned with the weapon's muzzle bore-sight (`weaponDirection`).
+* **Directional Hunter Combo (Backpack + `EWAR C-UAS Handset` / `hgun_esd_01_F`):**
+  * When drawing and holding the **EWAR C-UAS Handset** (Contact DLC Spectrum Device, `hgun_esd_01_F`), RF power is focused through the handheld antenna into a forward **3D conical beam** aligned with the weapon's muzzle bore-sight (`weaponDirection`).
   * Operators can adjust the beam focus via **ACE Self-Interaction** (`Equipment > EWAR Jammer > Beam Focus`) or **`PageUp` / `PageDown`** zeroing keys, playing a 2-second ACE attachment animation and swapping the physical 3D muzzle antenna:
     * **Wide (`45°` Cone | `muzzle_antenna_01_f`):** **600m** range, **3.0x** battery drain (15 min runtime).
     * **Focused (`20°` Cone | `muzzle_antenna_02_f`):** **1000m** range, **4.0x** battery drain (11.2 min runtime).
@@ -576,7 +579,7 @@ The EWAR subsystem models counter-UAS (C-UAS) electronic jamming fields and man-
 | File | Function | Purpose & How It Works |
 |---|---|---|
 | `fn_ewar_preInit.sqf` | `deScripts_fnc_ewar_preInit` | Runs during engine preInit (`preInit = 1`). Initializes `GVAR(ewar_jammers)` with JIP synchronization and binds synchronized CBA event handlers for adding/removing jammers. |
-| `fn_ewar_postInit.sqf` | `deScripts_fnc_ewar_postInit` | Runs during engine postInit (`postInit = 1`). Starts the 0.5-second client-side `CBA_fnc_addPerFrameHandler` loop, 0.08s LCD refresh handler, recovery monitor, CBA keybinds (`PageUp`/`PageDown`), ACE self-interactions, and Briefing Diary manual (`EWAR C-UAS Guide`). |
+| `fn_ewar_postInit.sqf` | `deScripts_fnc_ewar_postInit` | Runs during engine postInit (`postInit = 1`). Starts the 0.5-second client-side `CBA_fnc_addPerFrameHandler` loop, 0.08s LCD refresh handler, recovery monitor, CBA keybinds (`PageUp`/`PageDown`), ACE self-interactions, ACE Arsenal / Vanilla Inventory `B_RadioBag_01_*` & `hgun_esd_01_*` UI renaming and EWAR stat cards, and Briefing Diary manual (`EWAR C-UAS Guide`). |
 | `fn_ewar_addJammer.sqf` | `deScripts_fnc_ewar_addJammer` | Public API (`[source, radius, coreRatio, sideExempt]`) to register a new jammer on an object, marker, or coordinate. Broadcasts globally via CBA events. |
 | `fn_ewar_removeJammer.sqf` | `deScripts_fnc_ewar_removeJammer` | Public API to unregister an active jammer by its ID string or attached object reference. |
 | `fn_ewar_clientLoop.sqf` | `deScripts_fnc_ewar_clientLoop` | Periodic client evaluation routine. Manages backpack jammer & pulse battery drain (with 2x burn-through surge) and calculates normalized interference intensity (`0.0` to `1.0`) for the player's connected UAV. |
