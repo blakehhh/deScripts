@@ -64,13 +64,94 @@ INFO("init", "Initializing custom Zen Modules.");
     "\A3\ui_f\data\map\vehicleicons\iconCrate_ca.paa"
 ] call zen_custom_modules_fnc_register;
 
-
-["TFG Mission", "Call Endex",
+["TFG Logistics", "Spawn Loadout Locker",
     {
         params ["_modulePos", "_objectPos"];
-        [_modulePos, _objectPos] call EFUNC(zenModule,CallEndex);
+        if (!isNull _objectPos) exitWith {
+            if (_objectPos isKindOf "CAManBase") exitWith {
+                ["Cannot turn a unit into a Loadout Locker"] call zen_common_fnc_showMessage;
+            };
+            if (_objectPos getVariable [QEGVAR(systems,isLocker), false]) exitWith {
+                ["Object is already a Loadout Locker"] call zen_common_fnc_showMessage;
+            };
+
+            [
+                "Add Loadout Locker to Object",
+                [
+                    ["SLIDER", ["Action Height Offset (m)", "Vertical offset (Z) for the ACE interaction point on the object"], [-1, 2, 0, 2], false],
+                    ["SLIDER", ["3D Marker Height (m)", "Height above the locker for the owner's 3D indicator sphere"], [0.25, 2.5, 0.75, 2], false]
+                ],
+                {
+                    params ["_dialogValues", "_args"];
+                    _dialogValues params ["_heightOffset", "_markerHeight"];
+                    _args params ["_targetObj"];
+                    if (isNull _targetObj || {!alive _targetObj}) exitWith {};
+                    if (_targetObj getVariable [QEGVAR(systems,isLocker), false]) exitWith {
+                        ["Object is already a Loadout Locker"] call zen_common_fnc_showMessage;
+                    };
+
+                    [_targetObj, _heightOffset, _markerHeight] remoteExec [QFUNC(addLoadoutLocker), 0, _targetObj];
+                    [format ["Added Loadout Locker to %1", getText (configOf _targetObj >> "displayName")]] call zen_common_fnc_showMessage;
+                },
+                {},
+                [_objectPos]
+            ] call zen_dialog_fnc_create;
+        };
+
+        [
+            "Spawn Loadout Locker",
+            [
+                [
+                    "COMBO",
+                    ["Container Type", "Object class to spawn as the Personal Loadout Locker"],
+                    [
+                        [
+                            "B_supplyCrate_F",
+                            "Box_NATO_Equip_F",
+                            "Land_PlasticCase_01_large_F",
+                            "Land_PlasticCase_01_medium_F",
+                            "Land_MetalCase_01_large_F"
+                        ],
+                        [
+                            "Supply Box (NATO) - Default",
+                            "Equipment Box (NATO)",
+                            "Plastic Case (Large)",
+                            "Plastic Case (Medium)",
+                            "Metal Case (Large)"
+                        ],
+                        0
+                    ],
+                    false
+                ],
+                ["CHECKBOX", ["Clear Default Cargo", "Empty default weapons, ammo, and items inside the spawned container"], true, false],
+                ["SLIDER", ["Action Height Offset (m)", "Vertical offset (Z) for the ACE interaction point on the container"], [-1, 2, 0, 2], false],
+                ["SLIDER", ["3D Marker Height (m)", "Height above the locker for the owner's 3D indicator sphere"], [0.25, 2.5, 0.75, 2], false]
+            ],
+            {
+                params ["_dialogValues", "_args"];
+                _dialogValues params ["_crateClass", "_clearCargo", "_heightOffset", "_markerHeight"];
+                _args params ["_posATL"];
+
+                private _crate = createVehicle [_crateClass, _posATL, [], 0, "CAN_COLLIDE"];
+                if (_clearCargo) then {
+                    clearItemCargoGlobal _crate;
+                    clearMagazineCargoGlobal _crate;
+                    clearWeaponCargoGlobal _crate;
+                    clearBackpackCargoGlobal _crate;
+                };
+
+                [{
+                    _this call ace_zeus_fnc_addObjectToCurator;
+                }, _crate] call CBA_fnc_execNextFrame;
+
+                [_crate, _heightOffset, _markerHeight] remoteExec [QFUNC(addLoadoutLocker), 0, _crate];
+                [format ["Spawned Loadout Locker (%1)", getText (configFile >> "CfgVehicles" >> _crateClass >> "displayName")]] call zen_common_fnc_showMessage;
+            },
+            {},
+            [ASLToATL _modulePos]
+        ] call zen_dialog_fnc_create;
     },
-    "\a3\modules_f\data\portraitmodule_ca.paa"
+    "\A3\ui_f\data\map\vehicleicons\iconCrate_ca.paa"
 ] call zen_custom_modules_fnc_register;
 
 ["TFG Mission", "Add HALO Jump",

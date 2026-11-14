@@ -533,12 +533,9 @@ Modules registered into the ZEN (Zeus Enhanced) interface for Game Masters durin
 | `TFG AI` | Enable Unit Simulation | Wakes up frozen or cached AI groups by enabling simulation and un-hiding objects globally. |
 | `TFG Logistics` | Spawn Starter Crate | Spawns a full 7th Cavalry staging crate in the field with configurable company filters, heal actions, and arsenal toggles. |
 | `TFG Logistics` | Spawn Re-supply Crate | Spawns resupply crates (Infantry Resupply, Atlas Medical, Infantry Medical, Stinger MANPAD). |
-| `TFG Utilities` | Apply Loadout | ZEN dialog allowing Zeus to select any loadout from `CfgLoadouts` and force-apply it to a clicked player or AI unit. |
-| `TFG Utilities` | Regear Trooper | Re-applies the assigned starting loadout to a clicked unit to quickly re-arm them in the field. |
-| `TFG Mission` | Call Endex | Declares ENDEX (End of Exercise). Locks player weapon safeties, pacifies AI groups (Careless/Blue), heals all players, and triggers attendance logging. |
-| `TFG Mission` | Take Attendance | Dumps attendance logs of all connected players to the Zeus operator's RPT log. |
-| `TFG Mission` | Add HALO Jump | Attaches `deScripts_fnc_addHaloJump` across all clients & JIP for a clicked aircraft (configurable min altitude, chute pack, and staggered exit). |
-| `TFG Mission` | Add Static Line Jump | Attaches `deScripts_fnc_addLineJump` across all clients & JIP for a clicked aircraft (configurable altitude window, max speed, canopy class, and staggered exit). |
+| `TFG Logistics` | Spawn Loadout Locker | Dual-mode module: spawns a new Personal Loadout Locker container (configurable crate/case class, cargo clear, action & marker height) on ground click, or converts a clicked non-unit object into a locker across all clients & JIP. |
+| `TFG Mission` | Add HALO Jump | Attaches `deScripts_fnc_addHaloJump` across all clients & JIP for a clicked aircraft (configurable min altitude, chute pack, staggered exit, and jump gear loss simulation). |
+| `TFG Mission` | Add Static Line Jump | Attaches `deScripts_fnc_addLineJump` across all clients & JIP for a clicked aircraft (configurable altitude window, max speed, canopy class, staggered exit, and jump gear loss simulation). |
 | `TFG Mission` | Add Helicopter Get Out Side | Attaches `deScripts_fnc_addGetOutHelo` across all clients & JIP for a clicked helicopter/aircraft with optional color-coded Left/Right egress actions. |
 | `TFG EWAR` | Create Jammer Area | Prompts Zeus for outer radius (50m–1500m), inner hard-cut core ratio (0–0.9), and faction exemptions; places a static jamming bubble at the clicked position. |
 | `TFG EWAR` | Attach Jammer to Object | Attaches a mobile or destructible jammer bubble to a clicked vehicle or object (automatically ceases jamming if the object is destroyed). |

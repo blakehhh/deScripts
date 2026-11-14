@@ -19,6 +19,7 @@ params [
 ];
 
 if (isNull _object) exitWith {};
+if (_object getVariable [QEGVAR(systems,isLocker), false]) exitWith {};
 
 // Allow passing a single number for height, or a full 3D offset array
 if (_heightOffset isEqualType 0) then {
@@ -76,36 +77,68 @@ if (!hasInterface) exitWith {};
     };
 }, [_object]] call CBA_fnc_execNextFrame;
 
-// 1. Claim Locker Action (Visible only when unclaimed)
+// 1. Claim / Swap Locker Action (Visible only when unclaimed)
 private _claimAction = [
     QEGVAR(systems,lockerClaim),
     "Claim Locker",
     "",
     {
         params ["_target", "_player"];
+        private _uid = getPlayerUID _player;
+        private _registeredLockers = missionNamespace getVariable [QEGVAR(systems,allLockers), []];
         private _claimedLocker = _player getVariable [QEGVAR(systems,claimed_locker), objNull];
-        if (isNull _claimedLocker) then {
-            private _uid = getPlayerUID _player;
-            private _registeredLockers = missionNamespace getVariable [QEGVAR(systems,allLockers), []];
-            private _existingLockers = _registeredLockers select {alive _x && {(_x getVariable [QEGVAR(systems,locker_ownerUID), ""]) == _uid}};
-            if (_existingLockers isNotEqualTo []) then {
-                _claimedLocker = _existingLockers select 0;
-                _player setVariable [QEGVAR(systems,claimed_locker), _claimedLocker, true];
-            };
+        private _previousLockers = _registeredLockers select {
+            alive _x &&
+            {_x != _target} &&
+            {(_x getVariable [QEGVAR(systems,locker_ownerUID), ""]) == _uid}
         };
-        if (!isNull _claimedLocker && {alive _claimedLocker}) exitWith {
-            ["You already own a locker! Abandon it first."] call ace_common_fnc_displayTextPicture;
+        if (
+            !isNull _claimedLocker &&
+            {alive _claimedLocker} &&
+            {_claimedLocker != _target} &&
+            {(_claimedLocker getVariable [QEGVAR(systems,locker_ownerUID), ""]) == _uid}
+        ) then {
+            _previousLockers pushBackUnique _claimedLocker;
         };
+
+        private _wasSwapped = _previousLockers isNotEqualTo [];
+        {
+            _x setVariable [QEGVAR(systems,locker_owner), "", true];
+            _x setVariable [QEGVAR(systems,locker_ownerUID), "", true];
+        } forEach _previousLockers;
+
         _target setVariable [QEGVAR(systems,locker_owner), name _player, true];
-        _target setVariable [QEGVAR(systems,locker_ownerUID), getPlayerUID _player, true];
+        _target setVariable [QEGVAR(systems,locker_ownerUID), _uid, true];
         _player setVariable [QEGVAR(systems,claimed_locker), _target, true];
         ["create", [_target]] call FUNC(loadoutLocker_marker);
-        ["Locker Claimed."] call ace_common_fnc_displayTextPicture;
+        [if (_wasSwapped) then {"Previous locker abandoned. New locker claimed."} else {"Locker Claimed."}] call ace_common_fnc_displayTextPicture;
     },
     { (_target getVariable [QEGVAR(systems,locker_ownerUID), ""]) == "" },
     {},
     [],
-    _heightOffset
+    _heightOffset,
+    4,
+    [false, false, false, false, false],
+    {
+        params ["_target", "_player", "_params", "_actionData"];
+        private _uid = getPlayerUID _player;
+        private _claimedLocker = _player getVariable [QEGVAR(systems,claimed_locker), objNull];
+        private _ownsOtherLocker = !isNull _claimedLocker &&
+            {alive _claimedLocker} &&
+            {_claimedLocker != _target} &&
+            {(_claimedLocker getVariable [QEGVAR(systems,locker_ownerUID), ""]) == _uid};
+
+        if (!_ownsOtherLocker) then {
+            private _registeredLockers = missionNamespace getVariable [QEGVAR(systems,allLockers), []];
+            _ownsOtherLocker = (_registeredLockers findIf {
+                alive _x &&
+                {_x != _target} &&
+                {(_x getVariable [QEGVAR(systems,locker_ownerUID), ""]) == _uid}
+            }) != -1;
+        };
+
+        _actionData set [1, if (_ownsOtherLocker) then {"Swap Locker"} else {"Claim Locker"}];
+    }
 ] call ace_interact_menu_fnc_createAction;
 [_object, 0, [], _claimAction] call ace_interact_menu_fnc_addActionToObject;
 

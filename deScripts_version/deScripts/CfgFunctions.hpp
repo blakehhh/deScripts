@@ -129,8 +129,6 @@ class deScripts {
 
         class zenModule_CreateStarterCrate {};
         class zenModule_CreateSupplyCrate {};
-
-        class zenModule_CallEndex {};
     };
     class gear {
         file = "deScripts\functions\gear";
