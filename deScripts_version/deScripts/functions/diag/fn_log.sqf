@@ -24,6 +24,8 @@ params [
     ["_type", "LOG", [""]]
 ];
 
+if (_type in ["LOG", "INFO"] && {!(missionNamespace getVariable [QGVAR(debugMode), false])}) exitWith {};
+
 private _prefix = format ["[%1] ", QUOTE(PREFIX)];
 
 _componant = if ( _componant != "" ) then {format["(%1) ", _componant]} else {""};

@@ -38,7 +38,7 @@ private _execFSM = _activeScripts select 3;
 
 private _local_units = format ["<t align='center'><br />- Server -<br /> Units: %1 <br />Groups: %2 <br />Vehicles: %3 </t><br />",_countUnits,_countGroups,_countVehicles];
 private _global_units = format ["<t align='center'><br />- Global -<br /> Units: %1 <br />Groups: %2 <br />Vehicles: %3 </t><br />",_countGlobalUnits,_countGlobalGroups,_countGlobalVehicles] ;
-private _scripts = format ["<t align='center'><br />- Scripts -<br /> Spawn: %1 <br />execVM: %2 <br />Exec: %3 <br />execFSM: %4 </t><br />",_countUnits,_countGroups,_countVehicles];
+private _scripts = format ["<t align='center'><br />- Scripts -<br /> Spawn: %1 <br />execVM: %2 <br />Exec: %3 <br />execFSM: %4 </t><br />", _spawn, _execVM, _exec, _execFSM];
 private _fps_all = format ["<t align='center'><br />- Performance -<br />FPS: %1 <br />FpsMin: %2 <br />Uptime: %3 <br />MissionTime: %4 </t><br />",_fps,_fpsMin,_upTime,_missionTime];
 
 parseText (_local_units + _global_units + _scripts + _fps_all) remoteExec ["hint", _clientID]; 
