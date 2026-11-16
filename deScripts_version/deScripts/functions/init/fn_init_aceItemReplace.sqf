@@ -13,7 +13,7 @@ if (!EGVAR(patches,usesACE)) exitWith {};
 
 INFO("init", "Initializing Item replacement system.");
 
-if (!isNil {ace_medical_treatment_convertItems == 2}) then {
+if (missionNamespace getVariable ["ace_medical_treatment_convertItems", 2] == 2) then {
     switch (EGVAR(Settings,replaceMedical)) do {
         case (1): {
             ["FirstAidKit",[
