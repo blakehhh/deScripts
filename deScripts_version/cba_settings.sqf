@@ -795,7 +795,6 @@ cba_ui_StorePasswords = 1;
 // deScripts Mission Settings
 force force deScripts_Settings_addEarplugs = true;
 force force deScripts_Settings_AllowAILoadouts = false;
-force force deScripts_Settings_allowInsigniaApplication = true;
 force force deScripts_Settings_allowReplaceItem = true;
 force force deScripts_Settings_enable7cavZeusModules = true;
 force force deScripts_Settings_enableRadios = true;

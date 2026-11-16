@@ -22,6 +22,43 @@ if (EGVAR(Settings,showDiaryRecords)) then {
     call EFUNC(init,diary);
 };
 
+// Map-wide civilian AI to agent conversion
+if (isServer && {missionNamespace getVariable [QEGVAR(Settings,autoConvertCivAgents), false]}) then {
+    [{
+        {
+            if (
+                (side _x == civilian) &&
+                {!isPlayer _x} &&
+                {!(_x in playableUnits)} &&
+                {isNull objectParent _x} &&
+                {!(_x getVariable [QEGVAR(Agent,ignore), false])}
+            ) then {
+                [_x] call FUNC(makeAgent);
+            };
+        } forEach +allUnits;
+    }] call CBA_fnc_execNextFrame;
+
+    if !(missionNamespace getVariable [QEGVAR(Settings,autoConvertCivAgentsOnce), false]) then {
+        ["CAManBase", "InitPost", {
+            params ["_unit"];
+            [{
+                params ["_unit"];
+                if (
+                    !isNull _unit &&
+                    {alive _unit} &&
+                    {side _unit == civilian} &&
+                    {!isPlayer _unit} &&
+                    {!(_unit in playableUnits)} &&
+                    {isNull objectParent _unit} &&
+                    {!(_unit getVariable [QEGVAR(Agent,ignore), false])}
+                ) then {
+                    [_unit] call FUNC(makeAgent);
+                };
+            }, [_unit]] call CBA_fnc_execNextFrame;
+        }, true, [], true] call CBA_fnc_addClassEventHandler;
+    };
+};
+
 // Backwards compatibility aliases for older compositions / missions
 if (isNil "cScripts_fnc_doStarterCrate") then { cScripts_fnc_doStarterCrate = FUNC(doStarterCrate); };
 if (isNil "cScripts_fnc_addLoadoutLocker") then { cScripts_fnc_addLoadoutLocker = FUNC(addLoadoutLocker); };

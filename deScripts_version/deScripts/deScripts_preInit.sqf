@@ -21,7 +21,7 @@ EGVAR(patches,usesACEAX)        = isCLass (configFile >> "CfgPatches" >> "aceax_
 EGVAR(Staging,ZoneStatus) = false;
 EGVAR(Staging,showAllLoadouts) = false;
 GVAR(isPlayer) = hasInterface || {isPlayer player};
-GVAR(OneLife) = !isNil{(getArray (missionconfigfile >> "respawnTemplates") select 0) == "ace_spectator"};
+GVAR(OneLife) = "ace_spectator" in getArray (missionConfigFile >> "respawnTemplates");
 
 // Backwards compatibility aliases for older compositions & missions (cScripts -> deScripts)
 if (isClass (missionConfigFile >> "CfgFunctions" >> "deScripts")) then {

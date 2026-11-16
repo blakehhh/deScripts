@@ -502,6 +502,70 @@ INFO("init", "Initializing custom Zen Modules.");
     "\a3\ui_f\data\igui\cfg\simpletasks\types\destroy_ca.paa"
 ] call zen_custom_modules_fnc_register;
 
+// Convert Civilians to Agents
+[
+    "TFG Mission",
+    "Convert Civilians to Agents",
+    {
+        params ["_modulePos"];
+        [
+            "Convert Civilians to Agents",
+            [
+                ["SLIDER:RADIUS", ["Radius (m)", "Convert all non-player civilian AI within this radius into lightweight agents."], [10, 1000, 150, 0, _modulePos, [1, 1, 1, 1]]]
+            ],
+            {
+                params ["_arg", "_pos"];
+                _arg params ["_radius"];
+                _pos params ["_modulePos"];
+                [ASLToAGL _modulePos, _radius] remoteExec [QFUNC(makeAreaAgents), 2, false];
+                [format ["Converting civilian AI within %1m to agents.", round _radius]] call zen_common_fnc_showMessage;
+            },
+            {},
+            [_modulePos]
+        ] call zen_dialog_fnc_create;
+    }
+] call zen_custom_modules_fnc_register;
+
+// Assign Specialty Role / Permissions (Player-Only)
+[
+    "TFG Players",
+    "Assign Specialty Role",
+    {
+        params ["", "_objectPos"];
+        if (isNull _objectPos || {!isPlayer _objectPos}) exitWith {
+            ["Module must be placed directly on a player."] call zen_common_fnc_showMessage;
+        };
+
+        private _curMedic = _objectPos getVariable ["ace_medical_medicClass", 0];
+        private _curEng = _objectPos getVariable ["ace_isEngineer", 0];
+        private _curEOD = _objectPos getVariable ["ACE_isEOD", false];
+
+        [
+            format ["Assign Specialty Role: %1", name _objectPos],
+            [
+                ["CHECKBOX", ["Combat Life Saver (CLS)", "Grants ACE CLS (medicClass = 1)."], (_curMedic == 1), false],
+                ["CHECKBOX", ["Medic / Doctor", "Grants full ACE Medic (medicClass = 2). Overrides CLS if both checked."], (_curMedic == 2), false],
+                ["CHECKBOX", ["Engineer", "Grants ACE Engineer (ace_isEngineer = 1)."], (_curEng == 1), false],
+                ["CHECKBOX", ["Advanced Engineer", "Grants ACE Advanced Engineer (ace_isEngineer = 2). Overrides Engineer if both checked."], (_curEng == 2), false],
+                ["CHECKBOX", ["EOD Specialist", "Grants ACE EOD / Explosive Specialist."], _curEOD, false]
+            ],
+            {
+                params ["_arg", "_target"];
+                _arg params ["_isCLS", "_isMedic", "_isEng", "_isAdvEng", "_isEOD"];
+                if (isNull _target) exitWith {};
+
+                private _medicVal = if (_isMedic) then {2} else {if (_isCLS) then {1} else {0}};
+                private _engVal = if (_isAdvEng) then {2} else {if (_isEng) then {1} else {0}};
+
+                [QEGVAR(player,setRolePermissions), [_target, _medicVal, _engVal, _isEOD], _target] call CBA_fnc_targetEvent;
+                [format ["Updated specialty roles for %1.", name _target]] call zen_common_fnc_showMessage;
+            },
+            {},
+            _objectPos
+        ] call zen_dialog_fnc_create;
+    }
+] call zen_custom_modules_fnc_register;
+
 
 
 INFO("init", "Custom Zen Modules initialization complete");

@@ -1,12 +1,23 @@
 private _deScriptSettings = "deScripts Mission Settings";
 
 // 1; Mission
-[ // Mission Type
-    QEGVAR(Settings,setMissionType),
-    "LIST",
-    ["Mission Type", "This will deside on what kind of startup hint you get on mission start."],
+[ // Auto-Convert Civilian AI to Agents
+    QEGVAR(Settings,autoConvertCivAgents),
+    "CHECKBOX",
+    ["Auto-Convert Civilian AI to Agents", "Automatically convert non-player civilian AI units into lightweight createAgent entities."],
     [_deScriptSettings, "1; Mission"],
-    [[0,1,2,3], ["Custom", "Operation", "Training", "Public"], 1],
+    false,
+    true,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[ // Auto-Convert Civilian AI Once Only
+    QEGVAR(Settings,autoConvertCivAgentsOnce),
+    "CHECKBOX",
+    ["Convert Civilian AI Once at Start", "When enabled, only converts civilian AI present at mission start; otherwise also converts newly spawned civilian AI."],
+    [_deScriptSettings, "1; Mission"],
+    false,
     true,
     {},
     true
@@ -20,6 +31,28 @@ private _deScriptSettings = "deScripts Mission Settings";
     ["Documents","Allow the mission to write diary help documents."],
     [_deScriptSettings, "3; Player"],
     true,
+    true,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[ // Add Earplugs
+    QEGVAR(Settings,addEarplugs),
+    "CHECKBOX",
+    ["Add Earplugs", "Automatically add ACE Earplugs to players if missing."],
+    [_deScriptSettings, "3; Player"],
+    true,
+    true,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[ // Allow AI Loadouts
+    QEGVAR(Settings,AllowAILoadouts),
+    "CHECKBOX",
+    ["Allow AI Loadouts", "Allow deScripts gear/loadout handlers to apply to AI units."],
+    [_deScriptSettings, "3; Player"],
+    false,
     true,
     {},
     true

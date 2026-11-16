@@ -65,6 +65,7 @@ class deScripts {
         class doStarterCrate {};
 
         class makeAgent {};
+        class makeAreaAgents {};
     };
     class systems {
         file = "deScripts\functions\systems";
