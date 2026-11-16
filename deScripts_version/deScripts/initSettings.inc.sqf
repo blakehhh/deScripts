@@ -36,17 +36,6 @@ private _deScriptSettings = "deScripts Mission Settings";
     true
 ] call CBA_fnc_addSetting;
 
-[ // Add Earplugs
-    QEGVAR(Settings,addEarplugs),
-    "CHECKBOX",
-    ["Add Earplugs", "Automatically add ACE Earplugs to players if missing."],
-    [_deScriptSettings, "3; Player"],
-    true,
-    true,
-    {},
-    true
-] call CBA_fnc_addSetting;
-
 [ // Allow AI Loadouts
     QEGVAR(Settings,AllowAILoadouts),
     "CHECKBOX",
