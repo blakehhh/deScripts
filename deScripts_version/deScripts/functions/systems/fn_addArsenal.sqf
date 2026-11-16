@@ -37,9 +37,15 @@ private _arsenalStatement = {
         } else {
             SHOW_WARNING_2("Staging Arsenal", "Whitelist is empty for %1 [%2], falling back to full arsenal", player, typeOf player);
             [player, true] call ace_arsenal_fnc_addVirtualItems;
+            if (!isNil {GVAR(BLACKLIST)} && {GVAR(BLACKLIST) isNotEqualTo []}) then {
+                [player, GVAR(BLACKLIST), false] call ace_arsenal_fnc_removeVirtualItems;
+            };
         };
     } else {
         [player, true] call ace_arsenal_fnc_addVirtualItems;
+        if (!isNil {GVAR(BLACKLIST)} && {GVAR(BLACKLIST) isNotEqualTo []}) then {
+            [player, GVAR(BLACKLIST), false] call ace_arsenal_fnc_removeVirtualItems;
+        };
     };
 
 
