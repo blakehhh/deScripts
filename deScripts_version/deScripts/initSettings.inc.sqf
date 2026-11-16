@@ -3,21 +3,10 @@ private _deScriptSettings = "deScripts Mission Settings";
 // 1; Mission
 [ // Auto-Convert Civilian AI to Agents
     QEGVAR(Settings,autoConvertCivAgents),
-    "CHECKBOX",
+    "LIST",
     ["Auto-Convert Civilian AI to Agents", "Automatically convert non-player civilian AI units into lightweight createAgent entities."],
     [_deScriptSettings, "1; Mission"],
-    false,
-    true,
-    {},
-    true
-] call CBA_fnc_addSetting;
-
-[ // Auto-Convert Civilian AI Once Only
-    QEGVAR(Settings,autoConvertCivAgentsOnce),
-    "CHECKBOX",
-    ["Convert Civilian AI Once at Start", "When enabled, only converts civilian AI present at mission start; otherwise also converts newly spawned civilian AI."],
-    [_deScriptSettings, "1; Mission"],
-    false,
+    [[0, 1, 2], ["Disabled", "Once at Mission Start", "Continuous (Start + Spawned)"], 0],
     true,
     {},
     true

@@ -22,8 +22,11 @@ if (EGVAR(Settings,showDiaryRecords)) then {
     call EFUNC(init,diary);
 };
 
-// Map-wide civilian AI to agent conversion
-if (isServer && {missionNamespace getVariable [QEGVAR(Settings,autoConvertCivAgents), false]}) then {
+// Map-wide civilian AI to agent conversion (0 = Disabled, 1 = Once at Start, 2 = Continuous)
+private _civAgentMode = missionNamespace getVariable [QEGVAR(Settings,autoConvertCivAgents), 0];
+if (_civAgentMode isEqualType true) then { _civAgentMode = [0, 2] select _civAgentMode; };
+
+if (isServer && {_civAgentMode > 0}) then {
     [{
         {
             if (
@@ -38,7 +41,7 @@ if (isServer && {missionNamespace getVariable [QEGVAR(Settings,autoConvertCivAge
         } forEach +allUnits;
     }] call CBA_fnc_execNextFrame;
 
-    if !(missionNamespace getVariable [QEGVAR(Settings,autoConvertCivAgentsOnce), false]) then {
+    if (_civAgentMode == 2) then {
         ["CAManBase", "InitPost", {
             params ["_unit"];
             [{
