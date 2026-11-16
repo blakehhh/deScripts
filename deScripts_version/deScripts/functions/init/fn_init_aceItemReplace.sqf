@@ -16,23 +16,33 @@ INFO("init", "Initializing Item replacement system.");
 if (missionNamespace getVariable ["ace_medical_treatment_convertItems", 2] == 2) then {
     switch (EGVAR(Settings,replaceMedical)) do {
         case (1): {
-            ["FirstAidKit",[
-                "ACE_quikclot",
-                "ACE_splint",
-                "ACE_quikclot", "ACE_quikclot", "ACE_quikclot",
-                "ACE_tourniquet"
-            ]] call ace_common_fnc_registerItemReplacement;
-            ["Medikit",[
-                "ACE_splint",
-                "ACE_quikclot", "ACE_quikclot", "ACE_quikclot", "ACE_quikclot", "ACE_quikclot", "ACE_quikclot",
-                "ACE_morphine", "ACE_morphine",
-                "ACE_salineIV_500", "ACE_salineIV_500",
-                "ACE_tourniquet","ACE_tourniquet",
-                "ACE_adenosine",
-                "ACE_epinephrine", "ACE_epinephrine",
-                "ACE_surgicalKit",
-                "ACE_personalAidKit"
-            ]] call ace_common_fnc_registerItemReplacement;
+            private _fakReplacement = if (EGVAR(patches,usesKat)) then {
+                ["kat_IFAK"]
+            } else {
+                [
+                    "ACE_quikclot",
+                    "ACE_splint",
+                    "ACE_quikclot", "ACE_quikclot", "ACE_quikclot",
+                    "ACE_tourniquet"
+                ]
+            };
+            ["FirstAidKit", _fakReplacement] call ace_common_fnc_registerItemReplacement;
+            private _medikitReplacement = if (EGVAR(patches,usesKat)) then {
+                ["kat_MFAK"]
+            } else {
+                [
+                    "ACE_splint",
+                    "ACE_quikclot", "ACE_quikclot", "ACE_quikclot", "ACE_quikclot", "ACE_quikclot", "ACE_quikclot",
+                    "ACE_morphine", "ACE_morphine",
+                    "ACE_salineIV_500", "ACE_salineIV_500",
+                    "ACE_tourniquet","ACE_tourniquet",
+                    "ACE_adenosine",
+                    "ACE_epinephrine", "ACE_epinephrine",
+                    "ACE_surgicalKit",
+                    "ACE_personalAidKit"
+                ]
+            };
+            ["Medikit", _medikitReplacement] call ace_common_fnc_registerItemReplacement;
         };
     };
 };
