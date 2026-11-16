@@ -32,7 +32,7 @@ params ["_modulePos", "_objectPos"];
                     'None',
                     'TFG Default'
                 ],
-                1,
+                2,
                 3
             ], false],
         ["CHECKBOX", ["Allow all loadouts", "Show and allow all loadouts to be accessable."], false, false],
