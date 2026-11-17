@@ -1,6 +1,8 @@
 // Control Types
 #define CT_STATIC           0
 #define CT_BUTTON           1
+#define CT_EDIT             2
+#define CT_LISTBOX          5
 #define CT_STRUCTURED_TEXT  13
 
 // Static Styles
@@ -120,6 +122,59 @@ class deScripts_RscButtonRole: deScripts_RscButton {
     colorFocused[] = {0, 0, 0, 0};
     colorShadow[] = {0, 0, 0, 0};
     borderSize = 0;
+};
+
+class deScripts_RscListBox {
+    access = 0;
+    type = CT_LISTBOX;
+    style = 16;
+    font = "RobotoCondensed";
+    sizeEx = "(((((safezoneW / safezoneH) min 1.2) / 1.2) / 25) * 0.95)";
+    rowHeight = 0.035;
+    colorText[] = {1, 1, 1, 1};
+    colorDisabled[] = {0.5, 0.5, 0.5, 0.6};
+    colorScrollbar[] = {0.95, 0.75, 0.15, 1};
+    colorSelect[] = {1, 1, 1, 1};
+    colorSelect2[] = {1, 1, 1, 1};
+    colorSelectBackground[] = {0.75, 0.55, 0.08, 0.95};
+    colorSelectBackground2[] = {0.75, 0.55, 0.08, 0.95};
+    colorBackground[] = {0.10, 0.12, 0.15, 0.98};
+    soundSelect[] = {"\A3\ui_f\data\sound\RscListbox\soundSelect", 0.09, 1};
+    autoScrollSpeed = -1;
+    autoScrollDelay = 5;
+    autoScrollRewind = 0;
+    arrowEmpty = "#(argb,8,8,3)color(1,1,1,1)";
+    arrowFull = "#(argb,8,8,3)color(1,1,1,1)";
+    colorPicture[] = {1, 1, 1, 1};
+    colorPictureSelected[] = {1, 1, 1, 1};
+    colorPictureDisabled[] = {1, 1, 1, 0.5};
+    maxHistoryDelay = 1;
+    period = 1.2;
+    class ListScrollBar {
+        color[] = {1, 1, 1, 0.6};
+        colorActive[] = {1, 1, 1, 1};
+        colorDisabled[] = {1, 1, 1, 0.3};
+        thumb = "\A3\ui_f\data\gui\cfg\scrollbar\thumb_ca.paa";
+        arrowEmpty = "\A3\ui_f\data\gui\cfg\scrollbar\arrowEmpty_ca.paa";
+        arrowFull = "\A3\ui_f\data\gui\cfg\scrollbar\arrowFull_ca.paa";
+        border = "\A3\ui_f\data\gui\cfg\scrollbar\border_ca.paa";
+    };
+};
+
+class deScripts_RscEdit {
+    access = 0;
+    type = CT_EDIT;
+    style = 0x00;
+    font = "RobotoCondensed";
+    sizeEx = "(((((safezoneW / safezoneH) min 1.2) / 1.2) / 25) * 0.95)";
+    colorText[] = {1, 1, 1, 1};
+    colorDisabled[] = {0.5, 0.5, 0.5, 0.6};
+    colorSelection[] = {0.75, 0.55, 0.08, 0.7};
+    colorBackground[] = {0.06, 0.08, 0.10, 1};
+    autocomplete = "";
+    text = "";
+    shadow = 0;
+    canModify = 1;
 };
 
 class deScripts_RscLoadoutLocker {
@@ -365,41 +420,159 @@ class deScripts_RscLoadoutLocker {
         // Column 2 (Loadouts) Controls
         class BtnCombatKit: deScripts_RscButton {
             idc = 19110;
-            text = "Equip Combat Kit";
+            text = "Preset 1";
             x = LOCKER_X + 0.266;
-            y = LOCKER_Y + 0.088;
-            w = 0.208;
-            h = 0.038;
-            action = "['equipKit', ['Combat Kit']] call deScripts_fnc_loadoutLocker_ui;";
+            y = LOCKER_Y + 0.086;
+            w = 0.168;
+            h = 0.034;
+            action = "['equipSlot', [0]] call deScripts_fnc_loadoutLocker_ui;";
+        };
+        class BgSetSlot0: deScripts_RscText {
+            idc = -1;
+            style = ST_BACKGROUND;
+            colorBackground[] = {0.18, 0.22, 0.28, 1};
+            x = LOCKER_X + 0.438;
+            y = LOCKER_Y + 0.086;
+            w = 0.036;
+            h = 0.034;
+        };
+        class IconSetSlot0: deScripts_RscPicture {
+            idc = -1;
+            text = "\a3\ui_f\data\GUI\Rsc\RscDisplayArcadeMap\icon_config_ca.paa";
+            x = LOCKER_X + 0.447;
+            y = LOCKER_Y + 0.091;
+            w = 0.018;
+            h = 0.024;
+        };
+        class BtnSetSlot0: deScripts_RscButtonRole {
+            idc = 19114;
+            text = "";
+            tooltip = "Change assigned ACE Arsenal preset for Slot 1";
+            x = LOCKER_X + 0.438;
+            y = LOCKER_Y + 0.086;
+            w = 0.036;
+            h = 0.034;
+            action = "['openPicker', [0]] call deScripts_fnc_loadoutLocker_ui;";
         };
 
         class BtnReconKit: deScripts_RscButton {
             idc = 19111;
-            text = "Equip Recon Kit";
+            text = "Preset 2";
             x = LOCKER_X + 0.266;
-            y = LOCKER_Y + 0.138;
-            w = 0.208;
-            h = 0.038;
-            action = "['equipKit', ['Recon Kit']] call deScripts_fnc_loadoutLocker_ui;";
+            y = LOCKER_Y + 0.126;
+            w = 0.168;
+            h = 0.034;
+            action = "['equipSlot', [1]] call deScripts_fnc_loadoutLocker_ui;";
+        };
+        class BgSetSlot1: deScripts_RscText {
+            idc = -1;
+            style = ST_BACKGROUND;
+            colorBackground[] = {0.18, 0.22, 0.28, 1};
+            x = LOCKER_X + 0.438;
+            y = LOCKER_Y + 0.126;
+            w = 0.036;
+            h = 0.034;
+        };
+        class IconSetSlot1: deScripts_RscPicture {
+            idc = -1;
+            text = "\a3\ui_f\data\GUI\Rsc\RscDisplayArcadeMap\icon_config_ca.paa";
+            x = LOCKER_X + 0.447;
+            y = LOCKER_Y + 0.131;
+            w = 0.018;
+            h = 0.024;
+        };
+        class BtnSetSlot1: deScripts_RscButtonRole {
+            idc = 19115;
+            text = "";
+            tooltip = "Change assigned ACE Arsenal preset for Slot 2";
+            x = LOCKER_X + 0.438;
+            y = LOCKER_Y + 0.126;
+            w = 0.036;
+            h = 0.034;
+            action = "['openPicker', [1]] call deScripts_fnc_loadoutLocker_ui;";
         };
 
         class BtnCasualKit: deScripts_RscButton {
             idc = 19112;
-            text = "Equip Casual Kit";
+            text = "Preset 3";
             x = LOCKER_X + 0.266;
-            y = LOCKER_Y + 0.188;
-            w = 0.208;
-            h = 0.038;
-            action = "['equipKit', ['Casual Kit']] call deScripts_fnc_loadoutLocker_ui;";
+            y = LOCKER_Y + 0.166;
+            w = 0.168;
+            h = 0.034;
+            action = "['equipSlot', [2]] call deScripts_fnc_loadoutLocker_ui;";
+        };
+        class BgSetSlot2: deScripts_RscText {
+            idc = -1;
+            style = ST_BACKGROUND;
+            colorBackground[] = {0.18, 0.22, 0.28, 1};
+            x = LOCKER_X + 0.438;
+            y = LOCKER_Y + 0.166;
+            w = 0.036;
+            h = 0.034;
+        };
+        class IconSetSlot2: deScripts_RscPicture {
+            idc = -1;
+            text = "\a3\ui_f\data\GUI\Rsc\RscDisplayArcadeMap\icon_config_ca.paa";
+            x = LOCKER_X + 0.447;
+            y = LOCKER_Y + 0.171;
+            w = 0.018;
+            h = 0.024;
+        };
+        class BtnSetSlot2: deScripts_RscButtonRole {
+            idc = 19116;
+            text = "";
+            tooltip = "Change assigned ACE Arsenal preset for Slot 3";
+            x = LOCKER_X + 0.438;
+            y = LOCKER_Y + 0.166;
+            w = 0.036;
+            h = 0.034;
+            action = "['openPicker', [2]] call deScripts_fnc_loadoutLocker_ui;";
+        };
+
+        class BtnSlot4: deScripts_RscButton {
+            idc = 19117;
+            text = "Preset 4";
+            x = LOCKER_X + 0.266;
+            y = LOCKER_Y + 0.206;
+            w = 0.168;
+            h = 0.034;
+            action = "['equipSlot', [3]] call deScripts_fnc_loadoutLocker_ui;";
+        };
+        class BgSetSlot3: deScripts_RscText {
+            idc = -1;
+            style = ST_BACKGROUND;
+            colorBackground[] = {0.18, 0.22, 0.28, 1};
+            x = LOCKER_X + 0.438;
+            y = LOCKER_Y + 0.206;
+            w = 0.036;
+            h = 0.034;
+        };
+        class IconSetSlot3: deScripts_RscPicture {
+            idc = -1;
+            text = "\a3\ui_f\data\GUI\Rsc\RscDisplayArcadeMap\icon_config_ca.paa";
+            x = LOCKER_X + 0.447;
+            y = LOCKER_Y + 0.211;
+            w = 0.018;
+            h = 0.024;
+        };
+        class BtnSetSlot3: deScripts_RscButtonRole {
+            idc = 19118;
+            text = "";
+            tooltip = "Change assigned ACE Arsenal preset for Slot 4";
+            x = LOCKER_X + 0.438;
+            y = LOCKER_Y + 0.206;
+            w = 0.036;
+            h = 0.034;
+            action = "['openPicker', [3]] call deScripts_fnc_loadoutLocker_ui;";
         };
 
         class BtnArsenal: deScripts_RscButtonAccent {
             idc = 19113;
             text = "OPEN TFG ARSENAL";
             x = LOCKER_X + 0.266;
-            y = LOCKER_Y + 0.255;
+            y = LOCKER_Y + 0.254;
             w = 0.208;
-            h = 0.053;
+            h = 0.056;
             action = "['openArsenal'] call deScripts_fnc_loadoutLocker_ui;";
         };
 
@@ -519,6 +692,55 @@ class deScripts_RscLoadoutLocker {
             w = 0.220;
             h = 0.058;
             action = "['abandonLocker'] call deScripts_fnc_loadoutLocker_ui;";
+        };
+
+        // Preset Picker Overlay (Hidden by default)
+        class PresetPickerBg: deScripts_RscText {
+            idc = 19180;
+            style = ST_BACKGROUND;
+            colorBackground[] = {0.08, 0.10, 0.13, 0.98};
+            x = LOCKER_X + 0.14;
+            y = LOCKER_Y + 0.048;
+            w = 0.46;
+            h = 0.415;
+        };
+        class PresetPickerTitle: deScripts_RscText {
+            idc = 19181;
+            style = ST_LEFT + ST_VCENTER;
+            colorBackground[] = {0.14, 0.17, 0.22, 1.0};
+            colorText[] = {0.95, 0.75, 0.15, 1.0};
+            font = "RobotoCondensedBold";
+            text = " SELECT ACE ARSENAL PRESET";
+            x = LOCKER_X + 0.14;
+            y = LOCKER_Y + 0.048;
+            w = 0.46;
+            h = 0.032;
+        };
+        class PresetPickerSearch: deScripts_RscEdit {
+            idc = 19184;
+            tooltip = "Type to filter presets...";
+            x = LOCKER_X + 0.15;
+            y = LOCKER_Y + 0.088;
+            w = 0.44;
+            h = 0.030;
+            onKeyUp = "['filterPicker'] call deScripts_fnc_loadoutLocker_ui;";
+        };
+        class PresetPickerList: deScripts_RscListBox {
+            idc = 19182;
+            x = LOCKER_X + 0.15;
+            y = LOCKER_Y + 0.124;
+            w = 0.44;
+            h = 0.285;
+            onLBSelChanged = "['selectPreset', _this] call deScripts_fnc_loadoutLocker_ui;";
+        };
+        class PresetPickerCancel: deScripts_RscButtonDanger {
+            idc = 19183;
+            text = "Cancel";
+            x = LOCKER_X + 0.29;
+            y = LOCKER_Y + 0.418;
+            w = 0.16;
+            h = 0.036;
+            action = "['closePicker'] call deScripts_fnc_loadoutLocker_ui;";
         };
     };
 };

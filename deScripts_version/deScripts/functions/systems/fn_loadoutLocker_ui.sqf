@@ -42,6 +42,11 @@ switch (_mode) do {
         };
         _ctrlTitle ctrlSetText format [" PERSONAL LOCKER - %1", toUpper _ownerName];
 
+        // Hide preset picker overlay by default
+        {
+            (_display displayCtrl _x) ctrlShow false;
+        } forEach [19180, 19181, 19182, 19183, 19184];
+
         // Update all status panels
         ["updateStatus", [_display]] call FUNC(loadoutLocker_ui);
     };
@@ -74,24 +79,36 @@ switch (_mode) do {
         _bgEOD ctrlSetBackgroundColor (if (_isEOD) then {_colorActive} else {_colorInactive});
         _bgEOD ctrlCommit 0;
 
-        // 2. Preset Buttons Availability Check
+        // 2. Preset Buttons Availability Check (Persistent 4-slot mapping)
         private _savedLoadouts = profileNamespace getVariable ["ace_arsenal_saved_loadouts", []];
-        private _hasCombat = (_savedLoadouts findIf {_x isEqualType [] && {count _x > 0} && {(_x select 0) == "Combat Kit"}}) != -1;
-        private _hasRecon = (_savedLoadouts findIf {_x isEqualType [] && {count _x > 0} && {(_x select 0) == "Recon Kit"}}) != -1;
-        private _hasCasual = (_savedLoadouts findIf {_x isEqualType [] && {count _x > 0} && {(_x select 0) == "Casual Kit"}}) != -1;
+        private _slots = profileNamespace getVariable [QEGVAR(Profile,LockerSlots), ["Preset 1", "Preset 2", "Preset 3", "Preset 4"]];
+        if (!(_slots isEqualType []) || {count _slots < 4}) then {
+            private _fixed = +_slots;
+            if (!(_fixed isEqualType [])) then { _fixed = []; };
+            while {count _fixed < 4} do {
+                _fixed pushBack format ["Preset %1", (count _fixed) + 1];
+            };
+            _slots = _fixed;
+        };
 
-        private _btnCombat = _display displayCtrl 19110;
-        private _btnRecon = _display displayCtrl 19111;
-        private _btnCasual = _display displayCtrl 19112;
-
-        _btnCombat ctrlSetText (if (_hasCombat) then {"Equip Combat Kit"} else {"Combat Kit (Not Found)"});
-        _btnCombat ctrlEnable _hasCombat;
-
-        _btnRecon ctrlSetText (if (_hasRecon) then {"Equip Recon Kit"} else {"Recon Kit (Not Found)"});
-        _btnRecon ctrlEnable _hasRecon;
-
-        _btnCasual ctrlSetText (if (_hasCasual) then {"Equip Casual Kit"} else {"Casual Kit (Not Found)"});
-        _btnCasual ctrlEnable _hasCasual;
+        {
+            _x params ["_idc", "_slotIdx"];
+            private _presetName = _slots param [_slotIdx, format ["Preset %1", _slotIdx + 1], [""]];
+            private _hasPreset = (_savedLoadouts findIf {_x isEqualType [] && {count _x > 0} && {(_x select 0) == _presetName}}) != -1;
+            private _btn = _display displayCtrl _idc;
+            _btn ctrlSetText _presetName;
+            _btn ctrlEnable _hasPreset;
+            _btn ctrlSetTooltip (if (_hasPreset) then {
+                format ["Equip '%1'", _presetName]
+            } else {
+                format ["'%1' not found in ACE Arsenal (click icon to assign)", _presetName]
+            });
+        } forEach [
+            [19110, 0],
+            [19111, 1],
+            [19112, 2],
+            [19117, 3]
+        ];
 
         // 3. Medical Triage Silhouette & Status Summary
         private _bodyPartDamage = player getVariable ["ace_medical_bodyPartDamage", [0, 0, 0, 0, 0, 0]];
@@ -170,20 +187,187 @@ switch (_mode) do {
         };
     };
 
+    case "equipSlot": {
+        _params params [["_slotIndex", 0, [0]]];
+        private _slots = profileNamespace getVariable [QEGVAR(Profile,LockerSlots), ["Preset 1", "Preset 2", "Preset 3", "Preset 4"]];
+        private _targetPreset = _slots param [_slotIndex, "", [""]];
+        if (_targetPreset != "") then {
+            ["equipKit", [_targetPreset]] call FUNC(loadoutLocker_ui);
+        };
+    };
+
+    case "openPicker": {
+        _params params [["_slotIndex", 0, [0]]];
+        private _display = findDisplay 19100;
+        if (isNull _display) exitWith {};
+
+        private _savedLoadouts = profileNamespace getVariable ["ace_arsenal_saved_loadouts", []];
+        private _names = [];
+        {
+            if (_x isEqualType [] && {count _x > 0} && {(_x select 0) isEqualType ""}) then {
+                _names pushBack (_x select 0);
+            };
+        } forEach _savedLoadouts;
+
+        if (_names isEqualTo []) exitWith {
+            ["No saved ACE Arsenal presets found!"] call ace_common_fnc_displayTextPicture;
+        };
+
+        _names sort true;
+        missionNamespace setVariable ["deScripts_ui_pickerSlot", _slotIndex];
+        missionNamespace setVariable ["deScripts_ui_pickerNames", _names];
+
+        private _ctrlSearch = _display displayCtrl 19184;
+        _ctrlSearch ctrlSetText "";
+
+        (_display displayCtrl 19181) ctrlSetText format [" SELECT PRESET FOR SLOT %1", _slotIndex + 1];
+        {
+            (_display displayCtrl _x) ctrlShow true;
+        } forEach [19180, 19181, 19182, 19183, 19184];
+
+        ["filterPicker"] call FUNC(loadoutLocker_ui);
+        ctrlSetFocus _ctrlSearch;
+    };
+
+    case "filterPicker": {
+        private _display = findDisplay 19100;
+        if (isNull _display) exitWith {};
+
+        private _query = toLower (ctrlText (_display displayCtrl 19184));
+        private _names = missionNamespace getVariable ["deScripts_ui_pickerNames", []];
+        private _ctrlList = _display displayCtrl 19182;
+        lbClear _ctrlList;
+        {
+            if (_query == "" || {(toLower _x) find _query != -1}) then {
+                _ctrlList lbAdd _x;
+            };
+        } forEach _names;
+    };
+
+    case "selectPreset": {
+        _params params [["_ctrl", controlNull, [controlNull]], ["_lbIdx", -1, [0]]];
+        if (isNull _ctrl || {_lbIdx < 0}) exitWith {};
+
+        private _presetName = _ctrl lbText _lbIdx;
+        private _slotIndex = missionNamespace getVariable ["deScripts_ui_pickerSlot", 0];
+        private _slots = +(profileNamespace getVariable [QEGVAR(Profile,LockerSlots), ["Preset 1", "Preset 2", "Preset 3", "Preset 4"]]);
+        while {count _slots < 4} do {
+            _slots pushBack format ["Preset %1", (count _slots) + 1];
+        };
+        _slots set [_slotIndex, _presetName];
+        profileNamespace setVariable [QEGVAR(Profile,LockerSlots), _slots];
+        saveProfileNamespace;
+
+        ["closePicker"] call FUNC(loadoutLocker_ui);
+        ["updateStatus"] call FUNC(loadoutLocker_ui);
+    };
+
+    case "closePicker": {
+        private _display = findDisplay 19100;
+        if (isNull _display) exitWith {};
+        {
+            (_display displayCtrl _x) ctrlShow false;
+        } forEach [19180, 19181, 19182, 19183, 19184];
+    };
+
     case "equipKit": {
         _params params [["_targetPreset", "", [""]]];
         private _savedLoadouts = profileNamespace getVariable ["ace_arsenal_saved_loadouts", []];
         private _loadoutIndex = _savedLoadouts findIf {(_x select 0) == _targetPreset};
 
         if (_loadoutIndex != -1) then {
-            private _loadoutData = (_savedLoadouts select _loadoutIndex) select 1;
+            private _loadoutData = +((_savedLoadouts select _loadoutIndex) select 1);
             private _vanillaLoadout = _loadoutData;
-            if (_loadoutData isEqualType [] && {count _loadoutData > 0} && {(_loadoutData select 0) isEqualType []}) then {
-                _vanillaLoadout = _loadoutData select 0;
+            if (_loadoutData isEqualType [] && {count _loadoutData > 0} && {(_loadoutData select 0) isEqualType []} && {count (_loadoutData select 0) == 10}) then {
+                _vanillaLoadout = +(_loadoutData select 0);
             };
+            _vanillaLoadout = [_vanillaLoadout] call FUNC(filterUnitLoadout);
+
+            // Enforce mission blacklist (GVAR(BLACKLIST)) on loaded preset
+            private _blacklist = missionNamespace getVariable [QGVAR(BLACKLIST), []];
+            private _strippedCount = 0;
+            if (_blacklist isNotEqualTo [] && {_vanillaLoadout isEqualType []}) then {
+                private _blMap = createHashMap;
+                { _blMap set [_x, true]; } forEach _blacklist;
+
+                // Weapon slots: 0 (primary), 1 (launcher), 2 (handgun), 8 (binoculars)
+                {
+                    private _wepArr = _vanillaLoadout param [_x, [], [[]]];
+                    if (_wepArr isNotEqualTo []) then {
+                        private _wepClass = _wepArr param [0, "", [""]];
+                        if (_wepClass != "" && {_wepClass in _blMap}) then {
+                            _vanillaLoadout set [_x, []];
+                            _strippedCount = _strippedCount + 1;
+                        } else {
+                            {
+                                private _att = _wepArr param [_x, "", [""]];
+                                if (_att != "" && {_att in _blMap}) then {
+                                    _wepArr set [_x, ""];
+                                    _strippedCount = _strippedCount + 1;
+                                };
+                            } forEach [1, 2, 3, 6];
+                            {
+                                private _magArr = _wepArr param [_x, [], [[]]];
+                                if (_magArr isNotEqualTo [] && {(_magArr param [0, "", [""]]) in _blMap}) then {
+                                    _wepArr set [_x, []];
+                                    _strippedCount = _strippedCount + 1;
+                                };
+                            } forEach [4, 5];
+                        };
+                    };
+                } forEach [0, 1, 2, 8];
+
+                // Container slots: 3 (uniform), 4 (vest), 5 (backpack)
+                {
+                    private _contArr = _vanillaLoadout param [_x, [], [[]]];
+                    if (_contArr isNotEqualTo []) then {
+                        private _contClass = _contArr param [0, "", [""]];
+                        if (_contClass != "" && {_contClass in _blMap}) then {
+                            _vanillaLoadout set [_x, []];
+                            _strippedCount = _strippedCount + 1;
+                        } else {
+                            private _items = _contArr param [1, [], [[]]];
+                            private _kept = [];
+                            {
+                                private _itemClass = _x param [0, "", [""]];
+                                if (_itemClass != "" && {_itemClass in _blMap}) then {
+                                    _strippedCount = _strippedCount + 1;
+                                } else {
+                                    _kept pushBack _x;
+                                };
+                            } forEach _items;
+                            _contArr set [1, _kept];
+                        };
+                    };
+                } forEach [3, 4, 5];
+
+                // Headgear (6) and Facewear (7)
+                {
+                    private _gearClass = _vanillaLoadout param [_x, "", [""]];
+                    if (_gearClass != "" && {_gearClass in _blMap}) then {
+                        _vanillaLoadout set [_x, ""];
+                        _strippedCount = _strippedCount + 1;
+                    };
+                } forEach [6, 7];
+
+                // Assigned items (9): map, gps, radio, compass, watch, nvg
+                private _assigned = _vanillaLoadout param [9, [], [[]]];
+                {
+                    if (_x != "" && {_x in _blMap}) then {
+                        _assigned set [_forEachIndex, ""];
+                        _strippedCount = _strippedCount + 1;
+                    };
+                } forEach _assigned;
+            };
+
             [player, _vanillaLoadout] call CBA_fnc_setLoadout;
             [player] call EFUNC(gear,saveLoadout);
-            [format ["Equipped %1.", _targetPreset]] call ace_common_fnc_displayTextPicture;
+            private _msg = if (_strippedCount > 0) then {
+                format ["Equipped %1 (%2 blacklisted item(s) removed).", _targetPreset, _strippedCount]
+            } else {
+                format ["Equipped %1.", _targetPreset]
+            };
+            [_msg] call ace_common_fnc_displayTextPicture;
             ["updateStatus"] call FUNC(loadoutLocker_ui);
         } else {
             [format ["Missing '%1' preset in your ACE Arsenal!", _targetPreset]] call ace_common_fnc_displayTextPicture;

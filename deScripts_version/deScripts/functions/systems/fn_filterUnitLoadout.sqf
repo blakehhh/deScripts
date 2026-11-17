@@ -27,9 +27,11 @@ if (_loadout isEqualTo []) exitWith {
     _loadout;
 };
 
-private _baseLoadout = _loadout;
-if (EGVAR(Patches,usesACEAX)) then {
-    _baseLoadout = _loadout#0;
+private _isExtended = (count _loadout == 2) && {(_loadout#0) isEqualType []} && {count (_loadout#0) == 10};
+private _baseLoadout = if (_isExtended) then {_loadout#0} else {_loadout};
+
+if (count _baseLoadout < 10) exitWith {
+    _loadout
 };
 
 // Remove "ItemRadioAcreFlagged"
@@ -67,8 +69,8 @@ if ((_baseLoadout#5) isNotEqualTo []) then {
     {_x call _replaceRadio} forEach (_baseLoadout#5#1); // Backpack items
 };
 
-if (EGVAR(Patches,usesACEAX)) then {
-    _loadout set [0,_baseLoadout];
+if (_isExtended) then {
+    _loadout set [0, _baseLoadout];
 };
 
 _loadout
