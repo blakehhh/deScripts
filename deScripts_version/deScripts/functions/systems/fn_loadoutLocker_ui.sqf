@@ -477,7 +477,9 @@ switch (_mode) do {
         };
         [player, player] call ace_medical_treatment_fnc_fullHeal;
         [[], ["You have been fully healed."], [""], [""]] call CBA_fnc_notify;
-        ["updateStatus"] call FUNC(loadoutLocker_ui);
+        [{
+            ["updateStatus"] call FUNC(loadoutLocker_ui);
+        }, [], 0.1] call CBA_fnc_waitAndExecute;
     };
 
     case "eatAndDrink": {
