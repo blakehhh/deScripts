@@ -454,8 +454,8 @@ if (_holdingESD) then {
     // Hide the native "2.40 GHz", "2.4 GHz", and "2.50 GHz" labels at the bottom of the KAISERKOM LCD screen
     // Contact DLC stores the Spectrum Device weaponInfoType display via uiNamespace "bin_object"
     private _binObj = uiNamespace getVariable ["bin_object", controlNull];
-    if (!isNull _binObj && {!(_binObj isEqualTo (missionNamespace getVariable [QGVAR(ewar_lastHiddenBinObj), controlNull]))}) then {
-        GVAR(ewar_lastHiddenBinObj) = _binObj;
+    if (!isNull _binObj && {!(_binObj isEqualTo (uiNamespace getVariable [QGVAR(ewar_lastHiddenBinObj), controlNull]))}) then {
+        uiNamespace setVariable [QGVAR(ewar_lastHiddenBinObj), _binObj];
         private _esdDisp = ctrlParent _binObj;
         if (!isNull _esdDisp) then {
             private _ctrlSpec = _esdDisp displayCtrl 1999;
