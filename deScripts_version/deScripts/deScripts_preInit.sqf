@@ -16,6 +16,7 @@ EGVAR(patches,usesTFAR)         = isClass (configFile >> "CfgPatches" >> "task_f
 EGVAR(patches,usesAlive)        = isClass (configFile >> "CfgPatches" >> "ALiVE_main");
 EGVAR(patches,usesZen)          = isClass (configFile >> "CfgPatches" >> "zen_main");
 EGVAR(patches,usesACEAX)        = isCLass (configFile >> "CfgPatches" >> "aceax_main");
+EGVAR(patches,usesBOCR)         = isClass (configFile >> "CfgPatches" >> "bocr_main");
 
 // Global Variables
 EGVAR(Staging,ZoneStatus) = false;

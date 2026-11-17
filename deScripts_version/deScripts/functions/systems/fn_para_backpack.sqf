@@ -19,7 +19,19 @@ params [
     ["_chuteBackpackClass", "B_Parachute", ["B_Parachute"]]
 ];
 
+if (isNull _player || {!local _player}) exitWith {};
+
 private _backpack = backpack _player call BIS_fnc_basicBackpack;
+
+if (EGVAR(patches,usesBOCR)) exitWith {
+    if (_backpack != "" && {_backpack != _chuteBackpackClass} && {([_player] call bocr_main_fnc_chestpack) == ""}) then {
+        [_player] call bocr_main_fnc_actionOnChest;
+    };
+    if ((backpack _player call BIS_fnc_basicBackpack) != _chuteBackpackClass) then {
+        removeBackpack _player;
+        _player addBackpack _chuteBackpackClass;
+    };
+};
 
 private _cargo = backpackItems _player;
 
