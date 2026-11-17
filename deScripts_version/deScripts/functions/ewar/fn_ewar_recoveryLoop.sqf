@@ -22,12 +22,19 @@
 if (!isServer) exitWith {};
 if !(EGVAR(Settings,ewar_enable)) exitWith {};
 
-// Prune stale jammers whose source object/player disconnected or was deleted
+// Prune stale jammers whose source object/player disconnected, was deleted, or was destroyed
 if (!isNil QGVAR(ewar_jammers) && {GVAR(ewar_jammers) isNotEqualTo []}) then {
     private _beforeCount = count GVAR(ewar_jammers);
     GVAR(ewar_jammers) = GVAR(ewar_jammers) select {
         private _src = _x select 1;
-        !((_src isEqualType objNull) && {isNull _src})
+        if ((_src isEqualType objNull) && {isNull _src || {!alive _src}}) then {
+            if (!isNull _src) then {
+                _src setVariable [QGVAR(ewar_jammerID), nil, true];
+            };
+            false
+        } else {
+            true
+        };
     };
     if ((count GVAR(ewar_jammers)) != _beforeCount) then {
         publicVariable QGVAR(ewar_jammers);

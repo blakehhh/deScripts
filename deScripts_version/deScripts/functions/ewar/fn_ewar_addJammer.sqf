@@ -30,7 +30,7 @@ if (_source isEqualType "") then {
     _source = getMarkerPos _source;
 };
 
-if (_source isEqualType objNull && {isNull _source}) exitWith { "" };
+if (_source isEqualType objNull && {isNull _source || {!alive _source}}) exitWith { "" };
 if (_source isEqualType [] && {_source isEqualTo [0, 0, 0]}) exitWith { "" };
 
 private _jammerID = format ["ewar_jammer_%1_%2", round (random 100000), round diag_tickTime];
@@ -38,6 +38,13 @@ private _jammerData = [_jammerID, _source, _radius, _coreRatio, _sideExempt];
 
 if (_source isEqualType objNull) then {
     _source setVariable [QGVAR(ewar_jammerID), _jammerID, true];
+    if !(_source getVariable [QGVAR(ewar_killedEH), false]) then {
+        _source setVariable [QGVAR(ewar_killedEH), true];
+        _source addEventHandler ["Killed", {
+            params ["_unit"];
+            [_unit] call FUNC(ewar_removeJammer);
+        }];
+    };
 };
 
 if (!isServer) then {
